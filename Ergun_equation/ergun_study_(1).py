@@ -7,8 +7,10 @@ Run: python ergun_study.py
 
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 import sys
 from pathlib import Path
+from datetime import datetime
 
 SCRIPT_DIR = Path(__file__).parent
 
@@ -89,28 +91,58 @@ def sep(char="─", n=55):
     print(char * n)
 
 # ============================================================
-# PLOT HELPER
+# EXPORT HELPERS
 # ============================================================
+
+def fluid_meta(u0_cm_min):
+    """Return list of metadata rows for CSV header."""
+    return [
+        ["# Ergun Equation — Parametric Study"],
+        ["# Generated", datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+        ["# T [C]", T_C],
+        ["# P [bara]", P_Pa / 1e5],
+        ["# u0 [cm/min]", u0_cm_min],
+        ["# rho [kg/m3]", f"{RHO:.4f}"],
+        ["# mu [Pa.s]",   f"{MU:.4e}"],
+        ["# eps [-]",     EPS],
+        [],
+    ]
+
+def save_csv(filename, headers, rows, u0_cm_min, fixed_params):
+    """Write metadata + fixed params + data table to CSV."""
+    out = SCRIPT_DIR / filename
+    with open(out, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        for row in fluid_meta(u0_cm_min):
+            w.writerow(row)
+        for k, v in fixed_params.items():
+            w.writerow([f"# {k}", v])
+        w.writerow([])
+        w.writerow(headers)
+        for row in rows:
+            w.writerow(row)
+    print(f"  ✓ CSV  saved → {out}")
+    return out
 
 def save_plot(fig, filename):
     out = SCRIPT_DIR / filename
     fig.savefig(out, dpi=150, bbox_inches='tight')
-    print(f"\n  ✓ Plot saved → {out}")
+    print(f"  ✓ Plot saved → {out}")
 
 # ============================================================
 # MODES
 # ============================================================
 
 def mode_single():
-    """กรอกค่าตรงๆ ได้ dP ออกมา"""
     sep("═")
     print("  MODE: Single Query — กรอกค่าทุกตัว → ได้ dP")
     sep("═")
-    L  = ask("Bed length L", unit="m")
-    de = ask("Extrudate diameter de", unit="m")
-    le = ask("Extrudate length le",   unit="m")
+    L        = ask("Bed length L",          unit="m")
+    de_mm    = ask("Extrudate diameter de", unit="mm")
+    le_mm    = ask("Extrudate length le",   unit="mm")
+    de, le   = de_mm / 1000, le_mm / 1000
     u0_input = ask("Superficial velocity u0", default=U0_CM_MIN, unit="cm/min")
-    u0 = u0_input / 100.0 / 60.0
+    u0       = u0_input / 100.0 / 60.0
 
     d_eq = extrudate_deq(de, le)
     phi  = extrudate_phi(de, le)
@@ -127,181 +159,258 @@ def mode_single():
     print(f"  dP/L   = {dP/L:.2f} Pa/m")
     sep()
 
+    # Export single result as CSV
+    save_csv(
+        "ergun_single_query.csv",
+        ["Parameter", "Value", "Unit"],
+        [
+            ["L",      f"{L:.4f}",       "m"],
+            ["de",     f"{de_mm:.4f}",   "mm"],
+            ["le",     f"{le_mm:.4f}",   "mm"],
+            ["d_eq",   f"{d_eq*1000:.4f}","mm"],
+            ["phi",    f"{phi:.4f}",     "-"],
+            ["Re_mod", f"{Re:.4f}",      "-"],
+            ["regime", flow_regime(Re),  "-"],
+            ["dP",     f"{dP:.4f}",      "Pa"],
+            ["dP",     f"{dP/1000:.6f}", "kPa"],
+            ["dP",     f"{dP/1e5:.8f}",  "bar"],
+            ["dP/L",   f"{dP/L:.4f}",    "Pa/m"],
+        ],
+        u0_input,
+        {"L [m]": L, "de [mm]": de_mm, "le [mm]": le_mm}
+    )
+
 
 def mode_vary_L():
-    """Vary L, fix D, de, le"""
     sep("═")
     print("  MODE: Vary Bed Length L  (fix D, de, le)")
     sep("═")
-    D  = ask("Bed diameter D (fix)", unit="m")
-    de = ask("Extrudate diameter de (fix)", unit="m")
-    le = ask("Extrudate length le (fix)",   unit="m")
+    D        = ask("Bed diameter D (fix)",      unit="m")
+    de_mm    = ask("Extrudate diameter de (fix)",unit="mm")
+    le_mm    = ask("Extrudate length le (fix)",  unit="mm")
+    de, le   = de_mm / 1000, le_mm / 1000
     u0_input = ask("Superficial velocity u0", default=U0_CM_MIN, unit="cm/min")
-    u0 = u0_input / 100.0 / 60.0
-    L_arr = ask_range("L", "m")
+    u0       = u0_input / 100.0 / 60.0
+    L_arr    = ask_range("L", "m")
 
     dP_arr = np.array([ergun_extrudate(L, de, le, u0=u0) for L in L_arr])
-    d_eq = extrudate_deq(de, le)
-    phi  = extrudate_phi(de, le)
-    Re   = reynolds_mod(d_eq, phi, u0=u0)
+    d_eq   = extrudate_deq(de, le)
+    phi    = extrudate_phi(de, le)
+    Re     = reynolds_mod(d_eq, phi, u0=u0)
 
-    print(f"\n  {'L [m]':>8}  {'dP [Pa]':>10}  {'dP [kPa]':>10}")
-    sep("-", 35)
+    print(f"\n  {'L [m]':>8}  {'dP [Pa]':>10}  {'dP [kPa]':>10}  {'dP/L [Pa/m]':>12}")
+    sep("-", 48)
     for L, dP in zip(L_arr, dP_arr):
-        print(f"  {L:>8.3f}  {dP:>10.1f}  {dP/1000:>10.4f}")
+        print(f"  {L:>8.4f}  {dP:>10.2f}  {dP/1000:>10.4f}  {dP/L:>12.2f}")
 
+    # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(L_arr, dP_arr / 1000, 'o-', color='darkorange', lw=2, ms=6)
     ax.set_xlabel("Bed Length L [m]", fontsize=12)
     ax.set_ylabel("ΔP [kPa]", fontsize=12)
     ax.set_title(
         f"Ergun: ΔP vs Bed Length L\n"
-        f"D={D*100:.1f}cm, de={de*1000:.2f}mm, le={le*1000:.2f}mm, "
+        f"D={D*100:.1f}cm, de={de_mm:.2f}mm, le={le_mm:.2f}mm, "
         f"u₀={u0_input:.1f}cm/min, Re={Re:.1f} ({flow_regime(Re)})",
         fontsize=10)
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
+    print()
     save_plot(fig, "ergun_vary_L.png")
+
+    # CSV
+    save_csv(
+        "ergun_vary_L.csv",
+        ["L [m]", "dP [Pa]", "dP [kPa]", "dP/L [Pa/m]"],
+        [[f"{L:.4f}", f"{dP:.4f}", f"{dP/1000:.6f}", f"{dP/L:.4f}"]
+         for L, dP in zip(L_arr, dP_arr)],
+        u0_input,
+        {"D [m]": D, "de [mm]": de_mm, "le [mm]": le_mm,
+         "d_eq [mm]": f"{d_eq*1000:.3f}", "phi": f"{phi:.4f}", "Re_mod": f"{Re:.2f}"}
+    )
     plt.show()
 
 
 def mode_vary_D():
-    """Vary D — explain independence, show info"""
     sep("═")
     print("  MODE: Vary Bed Diameter D  (fix L, de, le)")
     sep("═")
-    print("  ⚠  หมายเหตุ: Ergun equation คำนวณ dP/unit cross-section area")
-    print("     ดังนั้น ΔP ไม่ขึ้นกับ D เลย ถ้า u0 คงที่")
-    print("     Mode นี้จะแสดง ΔP คงที่ + แสดง Re, phi เพื่อ reference\n")
+    print("  ⚠  ΔP ไม่ขึ้นกับ D เมื่อ u0 คงที่ (Ergun = per unit cross-section)")
+    print("     Mode นี้แสดง ΔP คงที่ + Re, phi เพื่อ reference\n")
 
-    L  = ask("Bed length L (fix)", unit="m")
-    de = ask("Extrudate diameter de (fix)", unit="m")
-    le = ask("Extrudate length le (fix)",   unit="m")
+    L        = ask("Bed length L (fix)",        unit="m")
+    de_mm    = ask("Extrudate diameter de (fix)",unit="mm")
+    le_mm    = ask("Extrudate length le (fix)",  unit="mm")
+    de, le   = de_mm / 1000, le_mm / 1000
     u0_input = ask("Superficial velocity u0", default=U0_CM_MIN, unit="cm/min")
-    u0   = u0_input / 100.0 / 60.0
-    D_arr = ask_range("D", "m")
+    u0       = u0_input / 100.0 / 60.0
+    D_arr    = ask_range("D", "m")
 
-    dP    = ergun_extrudate(L, de, le, u0=u0)
-    d_eq  = extrudate_deq(de, le)
-    phi   = extrudate_phi(de, le)
-    Re    = reynolds_mod(d_eq, phi, u0=u0)
+    dP   = ergun_extrudate(L, de, le, u0=u0)
+    d_eq = extrudate_deq(de, le)
+    phi  = extrudate_phi(de, le)
+    Re   = reynolds_mod(d_eq, phi, u0=u0)
 
     sep()
     print(f"  ΔP = {dP:.2f} Pa  =  {dP/1000:.4f} kPa  (คงที่ทุก D)")
-    print(f"  d_eq = {d_eq*1000:.3f} mm,  phi = {phi:.4f},  Re = {Re:.2f} ({flow_regime(Re)})")
+    print(f"  d_eq={d_eq*1000:.3f}mm  phi={phi:.4f}  Re={Re:.2f} ({flow_regime(Re)})")
     sep()
 
+    # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.axhline(dP / 1000, color='steelblue', lw=2.5,
-               label=f"ΔP = {dP:.1f} Pa (constant — independent of D)")
+               label=f"ΔP = {dP:.1f} Pa (constant)")
     ax.set_xlim([D_arr.min(), D_arr.max()])
     ax.set_ylim([0, dP / 1000 * 2.5])
     ax.set_xlabel("Bed Diameter D [m]", fontsize=12)
     ax.set_ylabel("ΔP [kPa]", fontsize=12)
     ax.set_title(
-        f"Ergun: ΔP vs Bed Diameter D\n"
-        f"L={L}m, de={de*1000:.2f}mm, le={le*1000:.2f}mm  |  "
-        f"ΔP independent of D when u₀ is fixed",
+        f"Ergun: ΔP vs Bed Diameter D  |  ΔP independent of D when u₀ fixed\n"
+        f"L={L}m, de={de_mm:.2f}mm, le={le_mm:.2f}mm",
         fontsize=10)
     ax.text(0.5, 0.6,
         f"d_eq = {d_eq*1000:.2f} mm\nφ = {phi:.4f}\n"
-        f"Re_mod = {Re:.1f}\n({flow_regime(Re)})",
+        f"Re_mod = {Re:.1f} ({flow_regime(Re)})",
         transform=ax.transAxes, ha='center', va='center', fontsize=10,
         bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
+    print()
     save_plot(fig, "ergun_vary_D.png")
+
+    # CSV — D range + constant dP columns
+    save_csv(
+        "ergun_vary_D.csv",
+        ["D [m]", "dP [Pa]", "dP [kPa]", "note"],
+        [[f"{D:.4f}", f"{dP:.4f}", f"{dP/1000:.6f}", "constant (independent of D)"]
+         for D in D_arr],
+        u0_input,
+        {"L [m]": L, "de [mm]": de_mm, "le [mm]": le_mm,
+         "d_eq [mm]": f"{d_eq*1000:.3f}", "phi": f"{phi:.4f}", "Re_mod": f"{Re:.2f}"}
+    )
     plt.show()
 
 
 def mode_vary_de():
-    """Vary extrudate diameter de, fix L, D, le"""
     sep("═")
     print("  MODE: Vary Extrudate Diameter de  (fix L, D, le)")
     sep("═")
-    L  = ask("Bed length L (fix)", unit="m")
-    D  = ask("Bed diameter D (fix)", unit="m")
-    le = ask("Extrudate length le (fix)", unit="m")
+    L        = ask("Bed length L (fix)",       unit="m")
+    D        = ask("Bed diameter D (fix)",      unit="m")
+    le_mm    = ask("Extrudate length le (fix)", unit="mm")
+    le       = le_mm / 1000
     u0_input = ask("Superficial velocity u0", default=U0_CM_MIN, unit="cm/min")
-    u0 = u0_input / 100.0 / 60.0
-    de_arr = ask_range("de", "m")
+    u0       = u0_input / 100.0 / 60.0
+    de_arr_mm = ask_range("de", "mm")
+    de_arr    = de_arr_mm / 1000
 
     dP_arr  = np.array([ergun_extrudate(L, de, le, u0=u0) for de in de_arr])
     deq_arr = np.array([extrudate_deq(de, le) for de in de_arr])
     phi_arr = np.array([extrudate_phi(de, le) for de in de_arr])
+    Re_arr  = np.array([reynolds_mod(deq, phi, u0=u0)
+                        for deq, phi in zip(deq_arr, phi_arr)])
 
-    print(f"\n  {'de[mm]':>8}  {'d_eq[mm]':>9}  {'phi':>6}  {'dP [Pa]':>10}  {'dP [kPa]':>10}")
-    sep("-", 52)
-    for de, deq, phi, dP in zip(de_arr, deq_arr, phi_arr, dP_arr):
-        print(f"  {de*1000:>8.3f}  {deq*1000:>9.3f}  {phi:>6.3f}  {dP:>10.1f}  {dP/1000:>10.4f}")
+    print(f"\n  {'de[mm]':>8}  {'d_eq[mm]':>9}  {'phi':>6}  "
+          f"{'Re':>8}  {'dP [Pa]':>10}  {'dP [kPa]':>10}")
+    sep("-", 62)
+    for de, deq, phi, Re, dP in zip(de_arr, deq_arr, phi_arr, Re_arr, dP_arr):
+        print(f"  {de*1000:>8.3f}  {deq*1000:>9.3f}  {phi:>6.3f}  "
+              f"{Re:>8.1f}  {dP:>10.2f}  {dP/1000:>10.4f}")
 
+    # Plot
     fig, ax1 = plt.subplots(figsize=(9, 5))
-    ax1.plot(de_arr * 1000, dP_arr / 1000, 's-', color='crimson', lw=2, ms=6, label="ΔP")
+    ax1.plot(de_arr_mm, dP_arr / 1000, 's-', color='crimson', lw=2, ms=6, label="ΔP")
     ax1.set_xlabel("Extrudate Diameter de [mm]", fontsize=12)
     ax1.set_ylabel("ΔP [kPa]", fontsize=12, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-
     ax2 = ax1.twinx()
-    ax2.plot(de_arr * 1000, phi_arr, '--', color='navy', lw=1.5, ms=5, label="φ (sphericity)")
+    ax2.plot(de_arr_mm, phi_arr, '--', color='navy', lw=1.5, label="φ")
     ax2.set_ylabel("Sphericity φ [-]", fontsize=12, color='navy')
     ax2.tick_params(axis='y', labelcolor='navy')
-
     ax1.set_title(
         f"Ergun: ΔP vs Extrudate Diameter de\n"
-        f"L={L}m, D={D*100:.1f}cm, le={le*1000:.2f}mm, u₀={u0_input:.1f}cm/min",
+        f"L={L}m, D={D*100:.1f}cm, le={le_mm:.2f}mm, u₀={u0_input:.1f}cm/min",
         fontsize=10)
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, fontsize=9)
     ax1.grid(True, alpha=0.3)
     fig.tight_layout()
+    print()
     save_plot(fig, "ergun_vary_de.png")
+
+    # CSV
+    save_csv(
+        "ergun_vary_de.csv",
+        ["de [mm]", "d_eq [mm]", "phi [-]", "Re_mod [-]", "dP [Pa]", "dP [kPa]"],
+        [[f"{de*1000:.4f}", f"{deq*1000:.4f}", f"{phi:.4f}",
+          f"{Re:.4f}", f"{dP:.4f}", f"{dP/1000:.6f}"]
+         for de, deq, phi, Re, dP in zip(de_arr, deq_arr, phi_arr, Re_arr, dP_arr)],
+        u0_input,
+        {"L [m]": L, "D [m]": D, "le [mm]": le_mm}
+    )
     plt.show()
 
 
 def mode_vary_le():
-    """Vary extrudate length le, fix L, D, de"""
     sep("═")
     print("  MODE: Vary Extrudate Length le  (fix L, D, de)")
     sep("═")
-    L  = ask("Bed length L (fix)", unit="m")
-    D  = ask("Bed diameter D (fix)", unit="m")
-    de = ask("Extrudate diameter de (fix)", unit="m")
+    L        = ask("Bed length L (fix)",          unit="m")
+    D        = ask("Bed diameter D (fix)",         unit="m")
+    de_mm    = ask("Extrudate diameter de (fix)",  unit="mm")
+    de       = de_mm / 1000
     u0_input = ask("Superficial velocity u0", default=U0_CM_MIN, unit="cm/min")
-    u0 = u0_input / 100.0 / 60.0
-    le_arr = ask_range("le", "m")
+    u0       = u0_input / 100.0 / 60.0
+    le_arr_mm = ask_range("le", "mm")
+    le_arr    = le_arr_mm / 1000
 
     dP_arr  = np.array([ergun_extrudate(L, de, le, u0=u0) for le in le_arr])
     deq_arr = np.array([extrudate_deq(de, le) for le in le_arr])
     phi_arr = np.array([extrudate_phi(de, le) for le in le_arr])
+    Re_arr  = np.array([reynolds_mod(deq, phi, u0=u0)
+                        for deq, phi in zip(deq_arr, phi_arr)])
 
-    print(f"\n  {'le[mm]':>8}  {'d_eq[mm]':>9}  {'phi':>6}  {'dP [Pa]':>10}  {'dP [kPa]':>10}")
-    sep("-", 52)
-    for le, deq, phi, dP in zip(le_arr, deq_arr, phi_arr, dP_arr):
-        print(f"  {le*1000:>8.3f}  {deq*1000:>9.3f}  {phi:>6.3f}  {dP:>10.1f}  {dP/1000:>10.4f}")
+    print(f"\n  {'le[mm]':>8}  {'d_eq[mm]':>9}  {'phi':>6}  "
+          f"{'Re':>8}  {'dP [Pa]':>10}  {'dP [kPa]':>10}")
+    sep("-", 62)
+    for le, deq, phi, Re, dP in zip(le_arr, deq_arr, phi_arr, Re_arr, dP_arr):
+        print(f"  {le*1000:>8.3f}  {deq*1000:>9.3f}  {phi:>6.3f}  "
+              f"{Re:>8.1f}  {dP:>10.2f}  {dP/1000:>10.4f}")
 
+    # Plot
     fig, ax1 = plt.subplots(figsize=(9, 5))
-    ax1.plot(le_arr * 1000, dP_arr / 1000, 'D-', color='darkgreen', lw=2, ms=6, label="ΔP")
+    ax1.plot(le_arr_mm, dP_arr / 1000, 'D-', color='darkgreen', lw=2, ms=6, label="ΔP")
     ax1.set_xlabel("Extrudate Length le [mm]", fontsize=12)
     ax1.set_ylabel("ΔP [kPa]", fontsize=12, color='darkgreen')
     ax1.tick_params(axis='y', labelcolor='darkgreen')
-
     ax2 = ax1.twinx()
-    ax2.plot(le_arr * 1000, phi_arr, '--', color='navy', lw=1.5, label="φ (sphericity)")
+    ax2.plot(le_arr_mm, phi_arr, '--', color='navy', lw=1.5, label="φ")
     ax2.set_ylabel("Sphericity φ [-]", fontsize=12, color='navy')
     ax2.tick_params(axis='y', labelcolor='navy')
-
     ax1.set_title(
         f"Ergun: ΔP vs Extrudate Length le\n"
-        f"L={L}m, D={D*100:.1f}cm, de={de*1000:.2f}mm, u₀={u0_input:.1f}cm/min",
+        f"L={L}m, D={D*100:.1f}cm, de={de_mm:.2f}mm, u₀={u0_input:.1f}cm/min",
         fontsize=10)
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, fontsize=9)
     ax1.grid(True, alpha=0.3)
     fig.tight_layout()
+    print()
     save_plot(fig, "ergun_vary_le.png")
+
+    # CSV
+    save_csv(
+        "ergun_vary_le.csv",
+        ["le [mm]", "d_eq [mm]", "phi [-]", "Re_mod [-]", "dP [Pa]", "dP [kPa]"],
+        [[f"{le*1000:.4f}", f"{deq*1000:.4f}", f"{phi:.4f}",
+          f"{Re:.4f}", f"{dP:.4f}", f"{dP/1000:.6f}"]
+         for le, deq, phi, Re, dP in zip(le_arr, deq_arr, phi_arr, Re_arr, dP_arr)],
+        u0_input,
+        {"L [m]": L, "D [m]": D, "de [mm]": de_mm}
+    )
     plt.show()
 
 
