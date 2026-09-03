@@ -1,0 +1,24 @@
+[Unit]
+# ============================================================================
+#  water-web.service — Web dashboard สำหรับ ESP32 Water Monitor
+#  อ่าน CSV ที่ water-logger เขียน (ไม่แตะ serial) เสิร์ฟหน้าเว็บ port 8080
+#  ติดตั้ง: แก้ __USER__ / __WORKDIR__ แล้ว
+#    sudo cp water-web.service /etc/systemd/system/
+#    sudo systemctl daemon-reload && sudo systemctl enable --now water-web
+# ============================================================================
+Description=ESP32 Water Monitor web dashboard
+After=network.target water-logger.service
+Wants=water-logger.service
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__WORKDIR__
+ExecStart=/usr/bin/python3 __WORKDIR__/web_dashboard.py --port 8080
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

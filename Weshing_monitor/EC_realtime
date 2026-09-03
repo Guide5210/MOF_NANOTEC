@@ -1,0 +1,125 @@
+/*
+ * https://www.electroniclinic.com/
+ * Hydroponic System by Engr. Fahad
+ * Simplified: EC, TDS, pH, Temperature (no OLED)
+ */
+#define BLYNK_TEMPLATE_ID "TMPL6wamuWNhw"
+#define BLYNK_TEMPLATE_NAME "Hydroponics system with ph sensor and ec sensor"
+#define BLYNK_AUTH_TOKEN "ATEZPONmkvWLKkxT6xGhkp-OeAN2_3MA"
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <SimpleTimer.h>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+// Your WiFi credentials.
+// Set password to "" for open networks.
+char ssid[] = "AndroidAP3DEC";
+char pass[] = "electroniclinic";
+
+
+SimpleTimer timer;
+SimpleTimer timer1;
+
+float calibration_value = 15.65 - 0.7;
+int phval = 0;
+unsigned long int avgval;
+int buffer_arr[10], temp;
+
+float ph_act;
+
+
+namespace pin {
+const byte tds_sensor = A0; // 36 (EC/TDS probe analog pin)
+const byte one_wire_bus = 5; // Dallas Temperature Sensor
+}
+
+namespace device {
+float aref = 3.3; // Vref, this is for 3.3v compatible controller boards, for arduino use 5.0v.
+}
+
+namespace sensor {
+float ec = 0;
+unsigned int tds = 0;
+float waterTemp = 0;
+float ecCalibration = 1;
+}
+
+OneWire oneWire(pin::one_wire_bus);
+DallasTemperature dallasTemperature(&oneWire);
+
+
+void setup() {
+  Serial.begin(115200); // Dubugging on hardware Serial 0
+  dallasTemperature.begin();
+  Blynk.begin(auth, ssid, pass);
+
+  timer.setInterval(1000L, send_Values);
+  timer1.setInterval(5000L, EC_and_ph);
+}
+
+
+void loop() {
+  Blynk.run();
+  timer.run();  // Initiates SimpleTimer
+  timer1.run();
+}
+
+void readEC() {
+  dallasTemperature.requestTemperatures();
+  sensor::waterTemp = dallasTemperature.getTempCByIndex(0);
+  float rawEc = analogRead(pin::tds_sensor) * device::aref / 4096; // read the analog value and convert to voltage value
+  float temperatureCoefficient = 1.0 + 0.02 * (sensor::waterTemp - 25.0); // temperature compensation formula
+  sensor::ec = (rawEc / temperatureCoefficient) * sensor::ecCalibration; // temperature and calibration compensation
+  sensor::tds = (133.42 * pow(sensor::ec, 3) - 255.86 * sensor::ec * sensor::ec + 857.39 * sensor::ec) * 0.5; // convert voltage value to tds value
+  Serial.print(F("TDS:")); Serial.println(sensor::tds);
+  Serial.print(F("EC:")); Serial.println(sensor::ec, 2);
+  Serial.print(F("Temperature:")); Serial.println(sensor::waterTemp, 2);
+}
+
+void ph_Sensor()
+{
+  for (int i = 0; i < 10; i++)
+  {
+    buffer_arr[i] = analogRead(35);
+    delay(30);
+  }
+  for (int i = 0; i < 9; i++)
+  {
+    for (int j = i + 1; j < 10; j++)
+    {
+      if (buffer_arr[i] > buffer_arr[j])
+      {
+        temp = buffer_arr[i];
+        buffer_arr[i] = buffer_arr[j];
+        buffer_arr[j] = temp;
+      }
+    }
+  }
+  avgval = 0;
+  for (int i = 2; i < 8; i++)
+    avgval += buffer_arr[i];
+  float volt = (float)avgval * 3.3 / 4096.0 / 6;
+  ph_act = -5.70 * volt + calibration_value;
+
+  Serial.print("pH Val: ");
+  Serial.println(ph_act);
+}
+
+void send_Values()
+{
+  Blynk.virtualWrite(V1, ph_act);
+  Blynk.virtualWrite(V2, sensor::ec);
+  Blynk.virtualWrite(V3, sensor::waterTemp);
+  Blynk.virtualWrite(V4, sensor::tds);
+}
+
+void EC_and_ph()
+{
+  readEC();
+  ph_Sensor();
+}

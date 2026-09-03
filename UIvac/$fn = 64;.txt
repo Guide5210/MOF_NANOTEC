@@ -1,0 +1,67 @@
+$fn = 64;
+
+part = "body";        // "body" | "baffle" | "assembly"
+
+/* ---------- [1] DISPLAY ---------- */
+pcb_w     = 164;
+pcb_h     = 97;
+hx        = 156;
+hy        = 89;
+pcb_t     = 1.6;
+glass_t   = 3.2;
+spacer_h  = 10;       // <-- MEASURE: height of the board's OWN standoffs
+tray_clr  = 1.0;
+
+/* ---------- [2] SCREWS  (no printed posts - the board brings its own) ----- */
+scr_d     = 2.9;      // M2.5 clearance;  M3 -> 3.4
+cb_d      = 6.2;
+cb_h      = 3.5;
+engage    = 5;
+
+/* ---------- [3] PLATE ---------- */
+tilt      = 60;
+face_t    = 8;
+frame_w   = 8;        // side band width
+frame_b   = 24;       // BOTTOM band - kept solid, it backs the display's
+                      // lower edge and ties both lower pads together
+pad_d     = 14;       // pad kept around each display screw hole
+frame_r   = 8;        // inner corner radius of the frame opening
+rim_on    = true;     // raised lip across the top of the opening
+rim_u     = 115.7;      // <-- MOVE THE LIP with this one number: it is the lower
+                      //     edge of the solid TOP band, and the lip sits on it
+rim_h     = 11;
+rim_t     = 5;
+bottom_m  = 12;
+top_m     = 12;
+
+/* ---------- [4] OPEN SIDES  (one clear span through BOTH cheeks) ---------- */
+open_on   = true;
+open_du0  = -45;      // span along the face, from the board centre
+open_du1  =  45;
+open_w0   = 8;        // starts at the plate FRONT surface (= face_t)
+open_r    = 6;
+
+/* ---------- [4b] CONTROL BOARD  (ESP32 RS485 IIoT, 95 x 89.4) ------------
+    The two ears stick STRAIGHT OUT sideways, LOW on the left / HIGH on the
+    right.  dx/2 = 47.5 + 8.5/2 = 51.75 is solid geometry; dy was only ever
+    inferred, so it is the axis that gets the SLOTS.  Pick a slot for dx,
+    slide for dy, tighten.                                                  */
+ctl_on    = true;
+ctl_w     = 95;       // PCB body, along X
+ctl_l     = 89.4;     // PCB body, along Y
+ctl_cx    = -13;      // board centre, global X
+ctl_cy    = 72;       // board centre, global Y
+ctl_tall  = 18;       // tallest thing on the board (relays / terminal blocks)
+ctl_ear_x = 51.75;    // = 95/2 + 8.5/2   (ear sticks out sideways)
+ctl_ear_y = 35.44;    // nominal only - the slot makes this uncritical
+ctl_n     = 4;        // SLOTS per side, spaced along X
+ctl_hp    = 8;        // slot pitch -> 7 selectable dx values
+ctl_slot  = 45;       // base slot length along Y -> dy is CONTINUOUS
+ctl_lo_ext= 3.5;        // extra length per END on the LOW  slot group
+ctl_hi_ext= 8.9;        // extra length per END on the HIGH slot group
+                      //   total length = ctl_slot + 2*ext, grown symmetrically
+m3_af     = 5.6;      // M3 nut across flats, press fit into the channel
+ctl_ch_d  = 2.6;      // nut-channel depth, cut from the UNDERSIDE
+ctl_relief= false;    // the board is in its own DIN case - flat underside
+ctl_rel_d = 1.2;      // recess depth if ctl_relief is turned on
+ctl_rel_m = 7;        // ledge width left around the board footprint

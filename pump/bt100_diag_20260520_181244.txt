@@ -1,0 +1,227 @@
+# BT100-1L RS485 Diagnostic Log
+# Saved: 2026-05-20 18:12:48
+# ============================================================
+
+[17:25:02] Ports refreshed - found 1.
+[17:25:08] Opened COM3 @ 1200 bps 8E1, addr=1.
+[17:25:08] Tip: click 'Read' to confirm the pump replies before starting it.
+[17:25:11] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:25:11] START RX: 
+[17:25:11] NO REPLY
+[17:25:11] No bytes received from the pump.
+[17:25:11] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:25:11] • Wrong pump address (the pump ignores frames not for it).
+[17:25:11] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:25:11] • Pump unpowered or in local-only mode.
+[17:25:19] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:25:19] START RX: 
+[17:25:19] NO REPLY
+[17:25:19] No bytes received from the pump.
+[17:25:19] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:25:19] • Wrong pump address (the pump ignores frames not for it).
+[17:25:19] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:25:19] • Pump unpowered or in local-only mode.
+[17:25:20] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:25:20] STOP RX: 
+[17:25:20] NO REPLY
+[17:25:20] No bytes received from the pump.
+[17:25:20] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:25:20] • Wrong pump address (the pump ignores frames not for it).
+[17:25:20] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:25:20] • Pump unpowered or in local-only mode.
+[17:25:34] Opened COM3 @ 1200 bps 8E1, addr=1.
+[17:25:34] Tip: click 'Read' to confirm the pump replies before starting it.
+[17:25:37] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:25:37] START RX: 
+[17:25:37] NO REPLY
+[17:25:37] No bytes received from the pump.
+[17:25:37] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:25:37] • Wrong pump address (the pump ignores frames not for it).
+[17:25:37] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:25:37] • Pump unpowered or in local-only mode.
+[17:29:39] Port not found
+[17:29:39] The selected COM port does not exist anymore.
+[17:29:39] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:29:39] • Check that the USB-RS485 dongle is plugged in.
+[17:29:39] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:29:41] Ports refreshed - found 0.
+[17:29:41] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:42] Ports refreshed - found 0.
+[17:29:42] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:42] Ports refreshed - found 0.
+[17:29:42] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:42] Ports refreshed - found 0.
+[17:29:42] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:43] Ports refreshed - found 0.
+[17:29:43] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:43] Ports refreshed - found 0.
+[17:29:43] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:43] Ports refreshed - found 0.
+[17:29:43] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:44] Ports refreshed - found 0.
+[17:29:44] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:44] Ports refreshed - found 0.
+[17:29:44] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:29:45] Ports refreshed - found 0.
+[17:29:45] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:38:17] Ports refreshed - found 0.
+[17:38:17] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:38:17] Ports refreshed - found 0.
+[17:38:17] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:38:17] Ports refreshed - found 0.
+[17:38:17] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:38:24] Ports refreshed - found 1.
+[17:38:25] Opened COM3 @ 1200 bps 8E1, addr=1.
+[17:38:25] Tip: click 'Read' to confirm the pump replies before starting it.
+[17:38:27] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:38:27] START RX: E9 01 02 58 4C 17
+[17:38:36] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:38:36] STOP RX: E9 01 02 58 4C 17
+[17:38:51] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:38:51] START RX: E9 01 02 58 4C 17
+[17:39:01] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:39:02] STOP RX: E9 01 02 58 4C 17
+[17:39:04] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:39:04] START RX: E9 01 02 58 4C 17
+[17:42:22] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:42:22] STOP RX: E9 01 02 58 4C 17
+[17:42:23] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:42:23] START RX: E9 01 02 58 4C 17
+[17:42:26] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:42:26] START RX: E9 01 02 58 4C 17
+[17:42:26] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:42:26] STOP RX: E9 01 02 58 4C 17
+[17:46:15] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:46:15] STOP RX: 
+[17:46:15] NO REPLY
+[17:46:15] No bytes received from the pump.
+[17:46:15] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:46:15] • Wrong pump address (the pump ignores frames not for it).
+[17:46:15] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:46:15] • Pump unpowered or in local-only mode.
+[17:46:16] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:46:16] STOP RX: 
+[17:46:16] NO REPLY
+[17:46:16] No bytes received from the pump.
+[17:46:16] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:46:16] • Wrong pump address (the pump ignores frames not for it).
+[17:46:16] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:46:16] • Pump unpowered or in local-only mode.
+[17:46:16] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:46:16] STOP RX: 
+[17:46:16] NO REPLY
+[17:46:16] No bytes received from the pump.
+[17:46:16] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:46:16] • Wrong pump address (the pump ignores frames not for it).
+[17:46:16] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:46:16] • Pump unpowered or in local-only mode.
+[17:46:16] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:46:16] STOP RX: 
+[17:46:16] NO REPLY
+[17:46:16] No bytes received from the pump.
+[17:46:16] • A/B polarity reversed — try swapping the two RS485 wires.
+[17:46:16] • Wrong pump address (the pump ignores frames not for it).
+[17:46:16] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[17:46:16] • Pump unpowered or in local-only mode.
+[17:46:39] Ports refreshed - found 1.
+[17:46:41] Opened COM3 @ 1200 bps 8E1, addr=1.
+[17:46:41] Tip: click 'Read' to confirm the pump replies before starting it.
+[17:46:42] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:46:42] START RX: E9 01 02 58 4C 17
+[17:47:01] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:47:01] STOP RX: E9 01 02 58 4C 17
+[17:47:03] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:47:03] START RX: E9 01 02 58 4C 17
+[17:47:39] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:47:39] STOP RX: E9 01 02 58 4C 17
+[17:47:40] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:47:40] START RX: E9 01 02 58 4C 17
+[17:47:42] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:47:42] STOP RX: E9 01 02 58 4C 17
+[17:59:33] Port not found
+[17:59:33] The selected COM port does not exist anymore.
+[17:59:33] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:59:33] • Check that the USB-RS485 dongle is plugged in.
+[17:59:33] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:59:34] Port not found
+[17:59:34] The selected COM port does not exist anymore.
+[17:59:34] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:59:34] • Check that the USB-RS485 dongle is plugged in.
+[17:59:34] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:59:35] Port not found
+[17:59:35] The selected COM port does not exist anymore.
+[17:59:35] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:59:35] • Check that the USB-RS485 dongle is plugged in.
+[17:59:35] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:59:35] Port not found
+[17:59:35] The selected COM port does not exist anymore.
+[17:59:35] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:59:35] • Check that the USB-RS485 dongle is plugged in.
+[17:59:35] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:59:35] Port not found
+[17:59:35] The selected COM port does not exist anymore.
+[17:59:35] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:59:35] • Check that the USB-RS485 dongle is plugged in.
+[17:59:35] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:59:35] Port not found
+[17:59:35] The selected COM port does not exist anymore.
+[17:59:35] • Click 'Refresh Ports' — the adapter may have changed COM number.
+[17:59:35] • Check that the USB-RS485 dongle is plugged in.
+[17:59:35] • Reinstall the CH340/FTDI/CP210x driver if the port never appears.
+[17:59:36] Ports refreshed - found 0.
+[17:59:36] No USB-Serial adapter detected. Plug in the RS485 dongle.
+[17:59:37] Invalid input
+[17:59:37] No COM port selected - click Refresh and pick one.
+[17:59:37] Invalid input
+[17:59:37] No COM port selected - click Refresh and pick one.
+[17:59:37] Invalid input
+[17:59:37] No COM port selected - click Refresh and pick one.
+[17:59:37] Invalid input
+[17:59:37] No COM port selected - click Refresh and pick one.
+[17:59:46] Ports refreshed - found 1.
+[17:59:48] Opened COM3 @ 1200 bps 8E1, addr=1.
+[17:59:48] Tip: click 'Read' to confirm the pump replies before starting it.
+[17:59:49] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[17:59:49] START RX: E9 01 02 58 4C 17
+[17:59:53] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[17:59:53] STOP RX: E9 01 02 58 4C 17
+[18:00:43] Opened COM3 @ 1200 bps 8E1, addr=1.
+[18:00:43] Tip: click 'Read' to confirm the pump replies before starting it.
+[18:00:44] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[18:00:44] START RX: E9 01 02 58 4C 17
+[18:00:47] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[18:00:47] STOP RX: E9 01 02 58 4C 17
+[18:00:48] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[18:00:48] START RX: E9 01 02 58 4C 17
+[18:00:49] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[18:00:49] STOP RX: E9 01 02 58 4C 17
+[18:00:50] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[18:00:50] START RX: E9 01 02 58 4C 17
+[18:00:51] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[18:00:51] STOP RX: E9 01 02 58 4C 17
+[18:00:59] Bad hex string
+[18:00:59] Hex string is empty.
+[18:01:31] MANUAL -> 6 byte(s): E9 01 02 44 4C 0D
+[18:01:31] HEX TX: E9 01 02 44 4C 0D
+[18:01:31] HEX RX: 
+[18:01:31] NO REPLY
+[18:01:31] No bytes received from the pump.
+[18:01:31] • A/B polarity reversed — try swapping the two RS485 wires.
+[18:01:31] • Wrong pump address (the pump ignores frames not for it).
+[18:01:31] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[18:01:31] • Pump unpowered or in local-only mode.
+[18:01:33] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[18:01:33] START RX: E9 01 02 58 4C 17
+[18:01:36] MANUAL -> 6 byte(s): E9 01 02 44 4C 0D
+[18:01:36] HEX TX: E9 01 02 44 4C 0D
+[18:01:36] HEX RX: 
+[18:01:36] NO REPLY
+[18:01:36] No bytes received from the pump.
+[18:01:36] • A/B polarity reversed — try swapping the two RS485 wires.
+[18:01:36] • Wrong pump address (the pump ignores frames not for it).
+[18:01:36] • Baud / parity mismatch — pump expects 1200 bps, 8E1.
+[18:01:36] • Pump unpowered or in local-only mode.
+[18:01:48] START TX: E9 01 06 58 4C 01 2C 01 01 3E
+[18:01:48] START RX: E9 01 02 58 4C 17
+[18:02:05] STOP TX: E9 01 06 58 4C 00 00 00 01 12
+[18:02:05] STOP RX: E9 01 02 58 4C 17

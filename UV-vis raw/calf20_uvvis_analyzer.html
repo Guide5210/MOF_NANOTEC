@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CALF-20 · UV-Vis Calibration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#fbfcfe; --surface:#ffffff; --sunk:#f4f6f9;
+    --ink:#0f141b; --muted:#586372; --faint:#98a2b0;
+    --line:#e7ebf1; --line2:#eef1f5;
+    --tz:#1f6fe0; --ox:#e07b1a; --wash:#7c45cc;
+    --cursor:#e0533d;                 /* the movable λ line — the one bold accent */
+    --ok:#0e8a63; --warn:#bd7d10; --bad:#d0432f;
+    --sans:'Instrument Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sh:0 1px 2px rgba(20,30,50,.04),0 2px 8px rgba(20,30,50,.05);
+    --sh2:0 4px 20px rgba(20,30,50,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:13.5px;line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  .app{max-width:1440px;margin:0 auto;padding:20px 26px 44px}
+
+  /* header */
+  header{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+  .title{display:flex;flex-direction:column;gap:2px}
+  .title h1{margin:0;font-size:19px;font-weight:600;letter-spacing:-.3px}
+  .title h1 b{color:var(--cursor);font-weight:600}
+  .title .sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.2px}
+  .modes{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--sh);gap:2px}
+  .mode{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;
+    user-select:none;transition:.16s;white-space:nowrap;border:none;background:none;font-family:var(--sans)}
+  .mode:hover{color:var(--ink)}
+  .mode.on{background:var(--ink);color:#fff;box-shadow:var(--sh)}
+  .mode .n{font-family:var(--mono);font-size:10px;opacity:.6;margin-left:5px}
+
+  .grid{display:grid;grid-template-columns:344px 1fr;gap:20px;align-items:start}
+
+  /* panels */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh)}
+  .panel .head{padding:15px 17px 0;display:flex;justify-content:space-between;align-items:baseline}
+  .panel .head h2{margin:0;font-size:14px;font-weight:600;letter-spacing:-.2px}
+  .panel .head .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  .panel .body{padding:15px 17px 17px}
+
+  /* dropzone */
+  .dz{display:block;width:100%;border:1.5px dashed var(--line);border-radius:12px;padding:22px 16px;text-align:center;
+    color:var(--muted);cursor:pointer;transition:.16s;background:var(--sunk)}
+  .dz *{pointer-events:none;display:block}
+  .dz:hover{border-color:var(--tz);background:#f5f9ff}
+  .dz.over{border-color:var(--tz);border-style:solid;background:#eef5ff;transform:scale(1.005)}
+  .dz .ic{width:34px;height:34px;margin:0 auto 8px;border-radius:9px;background:#fff;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--tz)}
+  .dz .m{font-size:13px;font-weight:600;color:var(--ink)}
+  .dz .s{font-size:11px;color:var(--faint);margin-top:3px}
+  .dz .fmt{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:9px;padding-top:8px;border-top:1px solid var(--line2)}
+  input[type=file]{display:none}
+
+  /* sample groups */
+  .grp{margin-top:14px}
+  .grp .gh{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.7px;color:var(--faint);margin-bottom:7px}
+  .grp .gh i{width:9px;height:9px;border-radius:3px}
+  .grp .gh .c{font-family:var(--mono);margin-left:auto;letter-spacing:0;font-weight:500}
+
+  .samp{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:7px;background:var(--surface);transition:.12s}
+  .samp.off{opacity:.45}
+  .samp .top{display:grid;grid-template-columns:16px 16px 1fr 26px;gap:8px;align-items:center}
+  .samp .use{width:15px;height:15px;accent-color:var(--tz);cursor:pointer;margin:0}
+  .samp .sw{width:16px;height:16px;border-radius:4px;border:1px solid var(--line);padding:0;cursor:pointer;background:none}
+  .samp .sw::-webkit-color-swatch-wrapper{padding:2px}.samp .sw::-webkit-color-swatch{border:none;border-radius:2px}
+  .samp .nm{width:100%;border:1px solid transparent;background:none;border-radius:5px;padding:2px 5px;
+    font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+  .samp .nm:hover{border-color:var(--line);background:var(--sunk)}
+  .samp .nm:focus{outline:none;border-color:var(--tz);background:#fff}
+  .samp .x{color:var(--faint);cursor:pointer;font-size:14px;text-align:center;line-height:1;padding:2px}
+  .samp .x:hover{color:var(--bad)}
+  .samp .bot{display:grid;grid-template-columns:1fr 96px;gap:8px;align-items:center;margin-top:8px}
+  .samp .info{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .samp .info .k{color:var(--faint)} .samp .info b{color:var(--ink);font-weight:600}
+  .rolesel{width:100%;border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px;
+    font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer;color:var(--ink)}
+  .rolesel:focus{outline:none;border-color:var(--tz)}
+  .concw{position:relative}
+  .conc{width:100%;background:#fff;border:1px solid var(--line);border-radius:6px;padding:5px 20px 5px 7px;
+    font-family:var(--mono);font-size:12px;text-align:right;color:var(--ink)}
+  .conc:focus{outline:none;border-color:var(--tz);box-shadow:0 0 0 3px rgba(31,111,224,.12)}
+  .conc:disabled{background:var(--sunk);color:var(--faint)}
+  .concu{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:8.5px;color:var(--faint);pointer-events:none}
+
+  .chip{display:inline-flex;padding:1px 6px;border-radius:11px;font-size:8.5px;font-weight:700;font-family:var(--mono);letter-spacing:.2px}
+  .chip.ok{background:rgba(14,138,99,.12);color:var(--ok)}
+  .chip.over{background:rgba(208,67,47,.12);color:var(--bad)}
+  .chip.inc{background:rgba(208,67,47,.12);color:var(--bad)}
+  .chip.dup{background:var(--sunk);color:var(--faint)}
+  .dilute{font-family:var(--mono);font-size:9.5px;color:var(--bad);margin-top:6px;padding:4px 7px;
+    background:rgba(208,67,47,.06);border-radius:6px}
+  .dilute b{font-weight:600}
+
+  .empty{color:var(--faint);text-align:center;padding:20px;font-size:12px;font-style:italic;
+    border:1px dashed var(--line);border-radius:10px;background:var(--sunk)}
+  .clr{width:100%;margin-top:9px;background:none;border:1px solid var(--line);border-radius:9px;padding:8px;
+    font-family:var(--mono);font-size:10.5px;color:var(--muted);cursor:pointer}
+  .clr:hover{border-color:var(--bad);color:var(--bad)}
+
+  /* chart cards */
+  .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);
+    padding:15px 18px 18px;margin-bottom:18px}
+  .chartcard .cap{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:6px}
+  .chartcard .cap h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.2px}
+  .chartcard .cap .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:right}
+  .cv{position:relative;height:340px}
+  .cv.sm{height:250px}
+  .cv canvas{cursor:crosshair}
+  .lg{display:flex;gap:15px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line2)}
+  .lg span{display:flex;align-items:center;gap:6px;color:var(--muted)}
+  .lg i{width:15px;height:3px;border-radius:2px}
+
+  /* species toggle + lambda control */
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .seg{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+  .seg button{padding:6px 15px;border-radius:6px;font-size:11.5px;font-weight:600;border:none;background:none;
+    color:var(--muted);cursor:pointer;font-family:var(--sans)}
+  .seg button.on{background:#fff;box-shadow:var(--sh)}
+  .seg button.on[data-r=tz]{color:var(--tz)} .seg button.on[data-r=ox]{color:var(--ox)}
+  .lam{display:flex;align-items:center;gap:9px;margin-left:auto}
+  .lam label{font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+  .lam input[type=range]{width:150px;accent-color:var(--cursor)}
+  .lam .val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--cursor);min-width:52px}
+
+  /* the hero readout */
+  .readout{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden;margin-top:16px;border:1px solid var(--line)}
+  .rd{background:var(--surface);padding:14px 16px}
+  .rd .k{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--faint);margin-bottom:5px}
+  .rd .v{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.5px;line-height:1}
+  .rd .v small{font-size:12px;color:var(--muted);font-weight:400}
+  .rd .v.r2ok{color:var(--ok)} .rd .v.r2no{color:var(--warn)}
+  .rd .eq{font-family:var(--mono);font-size:12.5px;color:var(--ink);line-height:1.5;margin-top:3px}
+  .rd .note{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:4px}
+
+  .msg{font-family:var(--mono);font-size:11px;line-height:1.5;padding:9px 12px;border-radius:9px;margin-top:14px;display:flex;gap:8px}
+  .msg.ok{background:rgba(14,138,99,.06);border:1px solid rgba(14,138,99,.24);color:var(--ink)}
+  .msg.warn{background:rgba(189,125,16,.06);border:1px solid rgba(189,125,16,.26);color:var(--ink)}
+  .msg.bad{background:rgba(208,67,47,.06);border:1px solid rgba(208,67,47,.26);color:var(--ink)}
+  .msg .i{flex:none;font-weight:700}
+  .msg.ok .i{color:var(--ok)} .msg.warn .i{color:var(--warn)} .msg.bad .i{color:var(--bad)}
+
+  .ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;color:var(--faint);text-align:center;gap:11px}
+  .ph .big{font-size:14px;color:var(--muted);font-weight:500}
+  .ph .s{font-family:var(--mono);font-size:11px;line-height:1.9} .ph .s b{color:var(--tz)}
+
+  .flds{display:flex;gap:11px;flex-wrap:wrap}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  .fld input,.fld select{background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 9px;
+    font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .fld input{width:72px} .fld select{width:100%}
+  .fld input:focus,.fld select:focus{outline:none;border-color:var(--tz)}
+
+  .go{width:100%;background:var(--ok);color:#fff;border:none;border-radius:10px;padding:11px;font-weight:600;
+    font-size:13px;cursor:pointer;margin-top:14px;font-family:var(--sans);box-shadow:var(--sh)}
+  .go:hover:not(:disabled){filter:brightness(1.06)} .go:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+  .ghost{width:100%;background:none;border:1px solid var(--line);border-radius:9px;padding:8px;font-family:var(--mono);
+    font-size:10.5px;color:var(--muted);cursor:pointer;margin-top:9px}
+  .ghost:hover{border-color:var(--tz);color:var(--tz)}
+
+  .res{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .rc{background:var(--sunk);border:1px solid var(--line);border-radius:11px;padding:15px 17px;position:relative;overflow:hidden}
+  .rc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+  .rc.tz::before{background:var(--tz)} .rc.ox::before{background:var(--ox)}
+  .rc .k{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--faint);margin-bottom:7px;font-weight:700}
+  .rc .v{font-family:var(--mono);font-size:25px;font-weight:600;line-height:1}
+  .rc.tz .v{color:var(--tz)} .rc.ox .v{color:var(--ox)}
+  .rc .v small{font-size:12px;color:var(--muted);font-weight:400}
+  .rc .a{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:5px}
+
+  .foot{font-family:var(--mono);font-size:9.5px;color:var(--faint);line-height:1.7;margin-top:2px}
+  .foot code{background:var(--sunk);padding:1px 5px;border-radius:4px;color:var(--muted)}
+  .foot .t{color:var(--ok)}
+  .hide{display:none!important}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title">
+      <h1>CALF-20 · UV-Vis <b>Calibration</b></h1>
+      <div class="sub">Zn₂(triazolate)₂(oxalate) — triazole &amp; oxalate standards · Thermo Evolution 350</div>
+    </div>
+    <div class="modes">
+      <button class="mode on" data-m="spectra" onclick="setMode('spectra')">Spectra</button>
+      <button class="mode" data-m="calib" onclick="setMode('calib')">Calibration</button>
+      <button class="mode" data-m="deconv" onclick="setMode('deconv')">Deconvolute</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- ============ LEFT: samples ============ -->
+    <div class="panel">
+      <div class="head"><h2>Samples</h2><span class="meta" id="cnt"></span></div>
+      <div class="body">
+        <label class="dz" id="dz">
+          <span class="ic">↓</span>
+          <span class="m">Drop spectrum files</span>
+          <span class="s">or click to browse · multi-sample split automatically</span>
+          <span class="fmt">INSIGHT → Reports → Export → Spectrum · CSV</span>
+          <input type="file" accept=".csv,.tsv,.txt,.xml" multiple onchange="pick(event)">
+        </label>
+        <div id="list"></div>
+        <button class="clr hide" id="clr" onclick="clearAll()">Clear all samples</button>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT: main view ============ -->
+    <div>
+      <!-- SPECTRA MODE -->
+      <div id="view-spectra">
+        <div class="chartcard">
+          <div class="cap"><h2>Absorbance vs wavelength</h2><span class="meta" id="sp-meta">drop a file to begin</span></div>
+          <div class="row" style="margin-bottom:8px">
+            <div class="seg" id="sp-filter">
+              <button class="on" data-f="all" onclick="setFilter('all')">All</button>
+              <button data-f="tz" onclick="setFilter('tz')">TZ</button>
+              <button data-f="ox" onclick="setFilter('ox')">Ox</button>
+              <button data-f="wash" onclick="setFilter('wash')">Wash</button>
+            </div>
+          </div>
+          <div class="cv"><canvas id="c-spec"></canvas></div>
+          <div class="lg" id="sp-lg"></div>
+        </div>
+      </div>
+
+      <!-- CALIBRATION MODE -->
+      <div id="view-calib" class="hide">
+        <div class="chartcard">
+          <div class="cap">
+            <h2 id="cal-title">Standard spectra</h2>
+            <span class="meta">drag the red line to pick the reading wavelength</span>
+          </div>
+          <div class="row">
+            <div class="seg" id="cal-species">
+              <button class="on" data-r="tz" onclick="setSpecies('tz')">TZ</button>
+              <button data-r="ox" onclick="setSpecies('ox')">Ox</button>
+            </div>
+            <div class="lam">
+              <label>read at</label>
+              <input type="range" id="lam-slider" min="190" max="300" step="1" value="200" oninput="setLambda(+this.value)">
+              <span class="val" id="lam-val">200 nm</span>
+            </div>
+          </div>
+          <div class="cv sm"><canvas id="c-calspec"></canvas></div>
+        </div>
+
+        <div class="chartcard" id="cal-curve-card">
+          <div class="cap"><h2>Absorbance vs concentration</h2><span class="meta" id="cal-cmeta"></span></div>
+          <div class="cv sm"><canvas id="c-cal"></canvas></div>
+          <div class="readout" id="cal-readout"></div>
+          <div id="cal-msg"></div>
+        </div>
+      </div>
+
+      <!-- DECONVOLUTE MODE -->
+      <div id="view-deconv" class="hide">
+        <div class="chartcard">
+          <div class="cap"><h2>Wash deconvolution</h2><span class="meta" id="dc-meta">needs both calibrations + a wash scan</span></div>
+          <div class="flds" style="margin-bottom:4px">
+            <div class="fld" style="flex:1;min-width:170px"><label>Wash sample</label><select id="wsel" onchange="autoRun()"></select></div>
+            <div class="fld"><label>λ min</label><input id="lmin" type="number" value="200" oninput="rebuild()"></div>
+            <div class="fld"><label>λ max</label><input id="lmax" type="number" value="300" oninput="rebuild()"></div>
+            <div class="fld"><label>dilution ×</label><input id="dil" type="number" value="1" min="1" step="0.1" oninput="autoRun()"></div>
+            <div class="fld"><label>path b</label><input id="bcm" type="number" value="1" min="0.1" step="0.1" oninput="rebuild()"></div>
+          </div>
+          <label class="cb" style="margin-top:10px;display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="scat" checked onchange="autoRun()" style="accent-color:var(--tz)">
+            correct light scattering (turbid / unfiltered sample) — adds a Rayleigh λ⁻⁴ term
+          </label>
+          <button class="go" id="run" onclick="runCLS()" disabled>Deconvolute</button>
+          <div id="dc-ph" class="ph"><div class="big">no result yet</div>
+            <div class="s">build <b>TZ</b> and <b>Ox</b> calibrations, assign a <b>Wash</b> scan, then deconvolute</div></div>
+          <div id="dc-out" class="hide">
+            <div class="cv sm" style="margin-top:14px"><canvas id="c-wash"></canvas></div>
+            <div class="res">
+              <div class="rc tz"><div class="k">Residual triazole</div><div class="v" id="v-tz">—</div><div class="a" id="a-tz"></div></div>
+              <div class="rc ox"><div class="k">Residual oxalate</div><div class="v" id="v-ox">—</div><div class="a" id="a-ox"></div></div>
+            </div>
+            <div id="dc-msg"></div>
+            <button class="ghost" onclick="exportCSV()">Export ε(λ) + result as CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        Calibration reads absorbance at one fixed wavelength — not the peak, which shifts between scans. Keep every point in the green Beer–Lambert range (A ≲ 1).<br>
+        <span class="t">Export from INSIGHT → Reports → Export → “Spectrum, Comma Separated Values (*.csv)”.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===== validated parser + helpers (unchanged from tested build) ===== */
+function parseAny(txt){const t=txt.replace(/^\uFEFF/,'').trim();
+  return (t.startsWith('<?xml')||/<Workbook|<Worksheet/i.test(t.slice(0,400)))?parseXML(txt):parseDelim(txt);}
+function parseDelim(text){
+  const L=text.replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim());
+  const D=/[,;\t]/;
+  const isDate=s=>/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(s)||/\d{1,2}:\d{2}/.test(s);
+  const isN=s=>s!==''&&!isNaN(parseFloat(s));
+  const H=[]; L.forEach((l,i)=>{ if(!l)return; const f=l.split(D)[0].toLowerCase().trim();
+    if(!isN(f)&&(/wave/.test(f)||/\bnm\b/.test(f)||/\(nm\)/.test(f))) H.push(i); });
+  const out=[];
+  if(H.length){
+    H.forEach((h,k)=>{
+      const end=(k+1<H.length)?H[k+1]:L.length, floor=(k>0)?H[k-1]:-1;
+      let title='';
+      for(let j=h-1;j>floor;j--){ const t=L[j]; if(!t)continue; if(isDate(t))continue;
+        const parts=t.split(D).map(p=>p.trim());
+        const strictNum=p=>p===''||/^[+-]?\d*\.?\d+(?:[eE][+-]?\d+)?$/.test(p);
+        if(parts.length>=2&&parts.every(strictNum)) continue;
+        title=t.replace(/[,;\t]+$/,'').trim(); break; }
+      const cols=L[h].split(D), xc=[];
+      cols.forEach((c,ci)=>{const s=c.toLowerCase(); if(/wave/.test(s)||/\bnm\b/.test(s)||/\(nm\)/.test(s)) xc.push(ci);});
+      const pairs=xc.length>1?xc.map(c=>({x:c,y:c+1})):[{x:0,y:1}];
+      pairs.forEach((p,pi)=>{ const nm=[],ab=[];
+        for(let i=h+1;i<end;i++){ if(!L[i])continue; const q=L[i].split(D),x=parseFloat(q[p.x]),y=parseFloat(q[p.y]);
+          if(!isNaN(x)&&!isNaN(y)){nm.push(x);ab.push(y);} }
+        if(nm.length>1) out.push(mk(pairs.length>1?(cols[p.y]||title||('scan'+(pi+1))):title,nm,ab)); });
+    });
+    if(out.length) return out;
+  }
+  const data=L.filter(l=>l&&l.split(D).filter(isN).length>=2).map(l=>l.split(D));
+  if(!data.length) return [];
+  const nc=Math.max.apply(null,data.map(r=>r.length));
+  for(let c=0;c+1<nc;c+=2){ const nm=[],ab=[];
+    data.forEach(r=>{const x=parseFloat(r[c]),y=parseFloat(r[c+1]); if(!isNaN(x)&&!isNaN(y)){nm.push(x);ab.push(y);}});
+    if(nm.length>1) out.push(mk('',nm,ab)); }
+  return out;
+}
+function parseXML(text){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  const NS='urn:schemas-microsoft-com:office:spreadsheet', out=[];
+  [...doc.getElementsByTagNameNS(NS,'Worksheet')].forEach(ws=>{
+    const rows=[...ws.getElementsByTagNameNS(NS,'Row')].map(r=>cells(r,NS));
+    if(rows.length<3) return;
+    let h=0; for(let i=0;i<Math.min(4,rows.length);i++){ if(rows[i].some(c=>c&&isNaN(parseFloat(c)))){h=i;break;} }
+    const nm=[],ab=[]; let title='';
+    rows.slice(h+1).forEach(r=>{ const x=parseFloat(r[0]),y=parseFloat(r[1]);
+      if(isNaN(x)||isNaN(y))return; nm.push(x);ab.push(y);
+      if(!title) for(let k=2;k<r.length;k++){ if(r[k]&&isNaN(parseFloat(r[k]))){title=r[k];break;} } });
+    if(nm.length>1) out.push(mk(title,nm,ab));
+  });
+  return out;
+}
+function cells(row,NS){const cs=[...row.getElementsByTagNameNS(NS,'Cell')],a=[];let c=0;
+  for(const x of cs){const i=x.getAttributeNS(NS,'Index'); if(i)c=parseInt(i)-1;
+    const d=x.getElementsByTagNameNS(NS,'Data')[0]; a[c]=d?d.textContent:''; c++;}
+  for(let i=0;i<a.length;i++) if(a[i]===undefined)a[i]=''; return a;}
+function mk(title,nm,ab){const i=nm.map((v,k)=>k).sort((p,q)=>nm[p]-nm[q]);
+  return {title:(title||'').trim(), nm:i.map(k=>nm[k]), abs:i.map(k=>ab[k])};}
+function gRole(n){const s=n.toLowerCase();
+  if(/we?sh|wash|rins|filtrat|supernat|eluat|permeat|mother|\brx\b/.test(s)) return 'wash';
+  if(/tz|triazol|1,?\s?4/.test(s)) return 'tz';
+  if(/\box|ox\s?\d|oxal/.test(s)) return 'ox';
+  return '';}
+function gConc(n){const m=n.match(/(\d+(?:[.,]\d+)?)\s*m\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
+function cleanName(s){let n=String(s||'').trim();
+  for(let i=0;i<5;i++) n=n.replace(/\.(csv|tsv|txt|xml|iwbk)$/i,'');
+  return n.replace(/\s+/g,' ').trim()||'scan';}
+function solve3(A,b){const M=A.map((r,i)=>[...r,b[i]]);
+  for(let c=0;c<3;c++){let p=c;for(let r=c+1;r<3;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;
+    [M[c],M[p]]=[M[p],M[c]]; const pv=M[c][c]||1e-12;
+    for(let r=0;r<3;r++)if(r!==c){const f=M[r][c]/pv;for(let k=c;k<4;k++)M[r][k]-=f*M[c][k];}}
+  return [M[0][3]/M[0][0],M[1][3]/M[1][1],M[2][3]/M[2][2]];}
+/* general n x n solve (Gauss-Jordan with partial pivoting) */
+function solveN(A,b){const n=b.length, M=A.map((r,i)=>[...r,b[i]]);
+  for(let c=0;c<n;c++){ let p=c;
+    for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
+    [M[c],M[p]]=[M[p],M[c]]; const pv=M[c][c]||1e-12;
+    for(let r=0;r<n;r++) if(r!==c){ const f=M[r][c]/pv; for(let k=c;k<=n;k++) M[r][k]-=f*M[c][k]; } }
+  return M.map((r,i)=>r[n]/r[i]); }
+/* Rayleigh scattering basis, scaled so the coefficient is O(1) */
+const SCAT_SCALE=1e9;
+const scatBasis=w=>SCAT_SCALE*Math.pow(w,-4);
+
+/* ===== state ===== */
+const MW={tz:69.07, ox:126.07};
+const COLOR={tz:'#1f6fe0', ox:'#e07b1a', wash:'#7c45cc', '':'#98a2b0'};
+const CEIL=1.0;                              // Beer–Lambert ceiling for the green band / point validity
+let S=[];                                    // samples
+let mode='spectra', filter='all', species='tz';
+const LAMBDA={tz:200, ox:204};               // per-species reading wavelength
+let chSpec,chCalSpec,chCal,chWash, LAST=null;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function shade(hex,f){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const m=v=>Math.round(v+(255-v)*f).toString(16).padStart(2,'0'); return '#'+m(r)+m(g)+m(b);}
+function At(s,w){let lo=0,hi=s.nm.length-1;
+  if(w<=s.nm[0])return s.abs[0]; if(w>=s.nm[hi])return s.abs[hi];
+  while(hi-lo>1){const m=(lo+hi)>>1; if(s.nm[m]<w)lo=m;else hi=m;}
+  return Math.abs(s.nm[lo]-w)<Math.abs(s.nm[hi]-w)?s.abs[lo]:s.abs[hi];}
+function peak(s){let a=-Infinity,nm=0; for(let i=0;i<s.nm.length;i++){ if(s.nm[i]>=190&&s.nm[i]<=280&&s.abs[i]>a){a=s.abs[i];nm=s.nm[i];} } return {a,nm};}
+function lin(x,y){const n=x.length,sx=x.reduce((a,b)=>a+b,0),sy=y.reduce((a,b)=>a+b,0),
+  sxx=x.reduce((a,b)=>a+b*b,0),sxy=x.reduce((a,b,i)=>a+b*y[i],0);
+  const sl=(n*sxy-sx*sy)/(n*sxx-sx*sx),ic=(sy-sl*sx)/n,my=sy/n;
+  let ss=0,sr=0; for(let i=0;i<n;i++){ss+=(y[i]-my)**2;sr+=(y[i]-(sl*x[i]+ic))**2;}
+  return {sl,ic,r2:ss>0?1-sr/ss:NaN,n};}
+
+/* stray-light dilution estimate (for saturated rows) */
+function stray(w){ if(w>=205)return .0017; if(w<=200)return .008;
+  const t=(205-w)/5; return Math.pow(10, Math.log10(.0017)+t*(Math.log10(.008)-Math.log10(.0017))); }
+function trueA(Am,w){ const s=stray(w),t=Math.pow(10,-Am)*(1+s)-s; return t>1e-7?-Math.log10(t):Infinity; }
+
+/* ===== loading ===== */
+function pick(e){ load(e.target.files); e.target.value=''; }
+function load(files){ let left=files.length; if(!left)return;
+  [...files].forEach(f=>{ const r=new FileReader();
+    r.onload=ev=>{ try{
+      const raw=ev.target.result;
+      if(/^\s*#\s*[,;\t]\s*sample\s*id/i.test(raw.slice(0,200)) && !/wavelength/i.test(raw.slice(0,4000))){
+        alert('“'+f.name+'” is a Report export (sample list only).\nRe-export as: Reports → Export → "Spectrum, CSV".');
+        if(--left===0){dedupe();rebuild();} return; }
+      const list=parseAny(raw);
+      if(!list.length) alert('No spectra found in '+f.name+'.');
+      list.forEach(sc=>{ const name=cleanName(sc.title||f.name);
+        S.push({name,file:f.name,role:gRole(name),conc:gConc(name),color:'#888',locked:false,use:true,
+          nm:sc.nm,abs:sc.abs,npts:sc.nm.length,short:sc.nm.length<50}); });
+    }catch(err){ alert('Parse failed: '+err.message); }
+      if(--left===0){ dedupe(); rebuild(); } };
+    r.readAsText(f); });
+}
+function dedupe(){ const seen=new Map();
+  S.forEach(s=>{ const pk=peak(s); const key=s.name+'|'+s.npts+'|'+pk.a.toFixed(4);
+    if(seen.has(key)){s.dup=true;s.use=false;}else{s.dup=false;seen.set(key,1);} }); }
+const dz=$('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');load(e.dataTransfer.files)});
+function clearAll(){ if(confirm('Remove all samples?')){ S=[]; LAST=null; rebuild(); } }
+
+/* ===== annotate + color ===== */
+function annotate(){ S.forEach(s=>{ const p=peak(s); s.pA=p.a; s.pNm=p.nm;
+  s.over = !s.short && p.a>CEIL;
+  if(s.over){ const ta=trueA(p.a,p.nm), tgt=CEIL*0.65;
+    s.adv = isFinite(ta)?{A:ta,D:ta/tgt,c:s.conc?s.conc/(ta/tgt):null}:{D:null}; } else s.adv=null;
+}); }
+function autoColor(){ const tot={tz:0,ox:0,wash:0,'':0},idx={tz:0,ox:0,wash:0,'':0};
+  S.forEach(s=>tot[s.role]++);
+  S.forEach(s=>{ if(s.locked)return; const n=tot[s.role]||1,i=idx[s.role]++;
+    s.color = n>1?shade(COLOR[s.role],.4*i/(n-1||1)):COLOR[s.role]; }); }
+const usable=r=>S.filter(s=>s.role===r&&s.use&&!s.short&&!s.dup&&s.conc>0&&!s.over);
+
+/* ===== sample list ===== */
+function renderList(){
+  const box=$('list');
+  $('cnt').textContent = S.length?S.length+' loaded':'';
+  $('clr').classList.toggle('hide',!S.length);
+  if(!S.length){ box.innerHTML='<div class="empty">No spectra yet.<br>Drop a CSV to start.</div>'; return; }
+  const groups=[['tz','Triazole'],['ox','Oxalate'],['wash','Wash'],['','Unassigned']];
+  box.innerHTML = groups.map(([r,label])=>{
+    const items=S.map((s,i)=>({s,i})).filter(o=>o.s.role===r);
+    if(!items.length) return '';
+    return `<div class="grp"><div class="gh"><i style="background:${COLOR[r]}"></i>${label}<span class="c">${items.length}</span></div>`
+      + items.map(o=>sampHTML(o.s,o.i)).join('') + `</div>`;
+  }).join('');
+}
+function sampHTML(s,i){
+  let chip;
+  if(s.short) chip='<span class="chip inc">INCOMPLETE</span>';
+  else if(s.dup) chip='<span class="chip dup">DUPLICATE</span>';
+  else if(s.over) chip='<span class="chip over">OVER A</span>';
+  else chip='<span class="chip ok">OK</span>';
+  const info = s.short ? `<span style="color:var(--bad)">only ${s.npts} pts</span>`
+    : `<span class="k">peak</span> <b>${s.pA.toFixed(2)}</b> <span class="k">@</span> <b>${s.pNm}</b> ${chip}`;
+  const isW=s.role==='wash';
+  const dil = (s.over&&s.adv) ? (s.adv.D
+      ? `<div class="dilute">est. true A ≈ ${s.adv.A.toFixed(2)} → <b>dilute ~${s.adv.D.toFixed(1)}×</b></div>`
+      : `<div class="dilute">above instrument ceiling — <b>dilute ≥ 10×</b></div>`) : '';
+  return `<div class="samp ${(!s.use||s.dup||s.short)?'off':''}">
+    <div class="top">
+      <input class="use" type="checkbox" ${s.use?'checked':''} title="include" onchange="setUse(${i},this.checked)">
+      <input class="sw" type="color" value="${s.color}" title="colour" oninput="setColor(${i},this.value)">
+      <input class="nm" type="text" value="${esc(s.name)}" oninput="setName(${i},this.value)">
+      <span class="x" onclick="del(${i})" title="remove">×</span>
+    </div>
+    <div class="bot">
+      <div class="info">${info}</div>
+      <select class="rolesel" onchange="setRole(${i},this.value)">
+        <option value=""${s.role===''?' selected':''}>—</option>
+        <option value="tz"${s.role==='tz'?' selected':''}>TZ</option>
+        <option value="ox"${s.role==='ox'?' selected':''}>Ox</option>
+        <option value="wash"${isW?' selected':''}>Wash</option>
+      </select>
+    </div>
+    <div class="bot" style="margin-top:6px;grid-template-columns:1fr">
+      <div class="concw"><input class="conc" type="number" step="0.01" value="${s.conc??''}" placeholder="${isW?'—':'enter mM'}"
+        ${isW||s.role===''?'disabled':''} oninput="setConc(${i},this.value)"><span class="concu">mM</span></div>
+    </div>${dil}</div>`;
+}
+function setUse(i,v){S[i].use=v;rebuild();}
+function setColor(i,v){S[i].color=v;S[i].locked=true;drawAll();}
+function setName(i,v){S[i].name=v;drawAll();}
+function setConc(i,v){S[i].conc=v===''?null:parseFloat(v);drawCalib();drawDeconv();}
+function setRole(i,v){S[i].role=v;if(v==='wash')S[i].conc=null;rebuild();}
+function del(i){S.splice(i,1);dedupe();rebuild();}
+
+/* ===== modes ===== */
+function setMode(m){ mode=m;
+  document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  $('view-spectra').classList.toggle('hide',m!=='spectra');
+  $('view-calib').classList.toggle('hide',m!=='calib');
+  $('view-deconv').classList.toggle('hide',m!=='deconv');
+  drawAll();
+}
+function setFilter(f){ filter=f; document.querySelectorAll('#sp-filter button').forEach(b=>b.classList.toggle('on',b.dataset.f===f)); drawSpectra(); }
+function setSpecies(r){ species=r; document.querySelectorAll('#cal-species button').forEach(b=>b.classList.toggle('on',b.dataset.r===r));
+  const L=LAMBDA[r]; $('lam-slider').value=L; $('lam-val').textContent=L+' nm'; drawCalib(); }
+function setLambda(v){ LAMBDA[species]=v; $('lam-val').textContent=v+' nm'; drawCalib(); }
+
+/* ===== charts ===== */
+const GC='#eef1f5', TC='#7a8592', AC='#d3d9e0';
+function opts(xl,yl){return{responsive:true,maintainAspectRatio:false,animation:false,
+  interaction:{mode:'nearest',intersect:false},
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e7ebf1',borderWidth:1,
+    titleColor:'#0f141b',bodyColor:'#586372',titleFont:{family:"'JetBrains Mono',monospace",size:11},
+    bodyFont:{family:"'JetBrains Mono',monospace",size:11},padding:9,cornerRadius:7}},
+  scales:{x:{type:'linear',title:{display:true,text:xl,color:TC,font:{size:10,family:"'JetBrains Mono',monospace"}},
+      grid:{color:GC},border:{color:AC},ticks:{color:TC,font:{family:"'JetBrains Mono',monospace",size:9.5}}},
+    y:{title:{display:true,text:yl,color:TC,font:{size:10,family:"'JetBrains Mono',monospace"}},
+      grid:{color:GC},border:{color:AC},ticks:{color:TC,font:{family:"'JetBrains Mono',monospace",size:9.5}}}}};}
+function ceilingBand(cap){ return {afterDraw:c=>{const a=c.chartArea,sc=c.scales,x=c.ctx;
+  const y0=sc.y.getPixelForValue(0), yc=sc.y.getPixelForValue(cap); x.save();
+  if(yc<y0){ x.fillStyle='rgba(14,138,99,.045)'; const t=Math.max(yc,a.top),b=Math.min(y0,a.bottom); if(b>t)x.fillRect(a.left,t,a.right-a.left,b-t); }
+  if(yc>a.top&&yc<a.bottom){ x.strokeStyle='rgba(208,67,47,.4)'; x.setLineDash([5,4]); x.lineWidth=1;
+    x.beginPath();x.moveTo(a.left,yc);x.lineTo(a.right,yc);x.stroke();x.setLineDash([]);
+    x.fillStyle='#d0432f'; x.font="9.5px 'JetBrains Mono',monospace"; x.fillText('A = '+cap,a.left+6,yc-4); }
+  x.restore(); }}; }
+
+function drawSpectra(){
+  const vis=S.filter(s=>!s.short&&s.use&&(filter==='all'||s.role===filter));
+  const ds=vis.map(s=>({label:s.name,data:s.nm.map((w,i)=>({x:w,y:s.abs[i]})),borderColor:s.color,borderWidth:1.7,pointRadius:0,tension:.1}));
+  const o=opts('Wavelength (nm)','Absorbance (AU)'); o.scales.x.min=188; o.scales.x.max=300;
+  if(chSpec)chSpec.destroy();
+  chSpec=new Chart($('c-spec'),{type:'line',data:{datasets:ds},options:o,plugins:[ceilingBand(CEIL)]});
+  $('sp-meta').textContent = S.length?`${vis.length} shown`:'drop a file to begin';
+  $('sp-lg').innerHTML=vis.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}${s.conc!=null?' · '+s.conc+' mM':''}</span>`).join('');
+}
+
+function drawCalib(){
+  const r=species, L=LAMBDA[r];
+  $('cal-title').textContent = (r==='tz'?'Triazole':'Oxalate')+' standard spectra';
+  // ---- top: standard spectra of this species + draggable λ cursor
+  const std=S.filter(s=>s.role===r&&s.use&&!s.short&&!s.dup);
+  const ds=std.map(s=>({label:s.name,data:s.nm.map((w,i)=>({x:w,y:s.abs[i]})),borderColor:s.color,borderWidth:1.6,pointRadius:0,tension:.1}));
+  const o=opts('Wavelength (nm)','Absorbance (AU)'); o.scales.x.min=190; o.scales.x.max=280;
+  if(chCalSpec)chCalSpec.destroy();
+  chCalSpec=new Chart($('c-calspec'),{type:'line',data:{datasets:ds},options:o,plugins:[ceilingBand(CEIL),{
+    afterDraw:c=>{const a=c.chartArea,sc=c.scales,x=c.ctx; const px=sc.x.getPixelForValue(L);
+      if(px>=a.left&&px<=a.right){ x.save(); x.strokeStyle='#e0533d'; x.lineWidth=1.6;
+        x.beginPath();x.moveTo(px,a.top);x.lineTo(px,a.bottom);x.stroke();
+        x.fillStyle='#e0533d'; x.font="600 10px 'JetBrains Mono',monospace";
+        x.fillText(L+' nm',Math.min(px+5,a.right-46),a.top+12); x.restore(); } }}]});
+  attachDrag(chCalSpec);
+
+  // ---- bottom: Abs vs conc at λ
+  const withC=std.filter(s=>s.conc>0);
+  const pts=withC.map(s=>({s,x:s.conc,y:At(s,L)}));
+  const valid=pts.filter(p=>p.y<CEIL);
+  const over=pts.filter(p=>p.y>=CEIL);
+  const co=opts('Concentration (mM)','Absorbance @ '+L+' nm (AU)'); co.scales.x.min=0;
+  const sets=[];
+  if(valid.length) sets.push({label:'valid',data:valid.map(p=>({x:p.x,y:p.y})),backgroundColor:COLOR[r],borderColor:COLOR[r],pointRadius:5.5,pointHoverRadius:7,showLine:false,type:'scatter'});
+  if(over.length) sets.push({label:'over',data:over.map(p=>({x:p.x,y:p.y})),backgroundColor:'#fff',borderColor:'#d0432f',borderWidth:1.5,pointRadius:5.5,showLine:false,type:'scatter'});
+  let fit=null;
+  if(valid.length>=2){ fit=lin(valid.map(p=>p.x),valid.map(p=>p.y));
+    const xm=Math.max.apply(null,valid.map(p=>p.x))*1.08;
+    sets.push({label:'fit',data:[{x:0,y:fit.ic},{x:xm,y:fit.sl*xm+fit.ic}],borderColor:COLOR[r]+'aa',borderWidth:1.5,borderDash:[6,4],pointRadius:0,type:'line'}); }
+  if(chCal)chCal.destroy();
+  chCal=new Chart($('c-cal'),{data:{datasets:sets},options:co});
+  $('cal-cmeta').textContent = `${valid.length} valid point(s)${over.length?' · '+over.length+' over ceiling (open)':''}`;
+
+  // ---- readout
+  const b=1;
+  if(fit && valid.length>=2){
+    const eps=fit.sl/b*1000;
+    const r2cls = valid.length>=3 ? (fit.r2>=0.999?'r2ok':'r2no') : '';
+    const r2txt = valid.length>=3 ? fit.r2.toFixed(4) : 'n/a';
+    $('cal-readout').innerHTML=`
+      <div class="rd"><div class="k">Molar absorptivity ε</div><div class="v">${eps.toFixed(0)} <small>M⁻¹cm⁻¹</small></div><div class="note">at ${L} nm · b = 1 cm</div></div>
+      <div class="rd"><div class="k">R²</div><div class="v ${r2cls}">${r2txt}</div><div class="note">${valid.length} points${valid.length<3?' · need ≥3':''}</div></div>
+      <div class="rd"><div class="k">Calibration equation</div><div class="eq">A = ${fit.sl.toFixed(4)}·c ${fit.ic>=0?'+':'−'} ${Math.abs(fit.ic).toFixed(4)}</div><div class="note">c in mM · use to read unknowns</div></div>`;
+    // guidance message
+    let m='';
+    if(L<200) m=['warn','!',`${L} nm is below the guaranteed baseline range (200–800 nm) — stray light inflates ε here. Move the line to ≥ 200 nm.`];
+    else if(over.length) m=['warn','!',`${over.length} point(s) exceed A = ${CEIL} at this λ (shown open) and are excluded. Move to a longer wavelength or dilute those standards.`];
+    else if(valid.length<3) m=['warn','·','Only 2 valid points — a line always fits 2 points, so R² is meaningless. Measure ≥3 (ideally 5) standards.'];
+    else if(fit.r2>=0.999) m=['ok','✓',`Excellent linearity (R² = ${fit.r2.toFixed(4)}). This λ and ε are report-ready.`];
+    else m=['warn','·',`R² = ${fit.r2.toFixed(4)} is below 0.999. Try a nearby λ, or check for a saturated/off standard.`];
+    $('cal-msg').innerHTML=`<div class="msg ${m[0]}"><span class="i">${m[1]}</span><span>${m[2]}</span></div>`;
+  } else {
+    $('cal-readout').innerHTML=`<div class="rd" style="grid-column:1/-1"><div class="k">Molar absorptivity</div><div class="v" style="color:var(--faint)">—</div><div class="note">assign ≥2 ${r.toUpperCase()} standards with concentrations</div></div>`;
+    $('cal-msg').innerHTML='';
+  }
+}
+/* drag the λ line on the calibration spectrum */
+function attachDrag(chart){
+  const cv=chart.canvas; let drag=false;
+  const setFromEvent=e=>{ const rect=cv.getBoundingClientRect(); const px=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+    const a=chart.chartArea; if(px<a.left-6||px>a.right+6) return;
+    let v=chart.scales.x.getValueForPixel(Math.max(a.left,Math.min(a.right,px)));
+    v=Math.round(Math.max(190,Math.min(280,v)));
+    LAMBDA[species]=v; $('lam-slider').value=v; $('lam-val').textContent=v+' nm'; drawCalib(); };
+  cv.onmousedown=e=>{drag=true;setFromEvent(e);};
+  window.addEventListener('mousemove',e=>{if(drag)setFromEvent(e);});
+  window.addEventListener('mouseup',()=>{drag=false;});
+  cv.ontouchstart=e=>{drag=true;setFromEvent(e);e.preventDefault();};
+  cv.ontouchmove=e=>{if(drag){setFromEvent(e);e.preventDefault();}};
+  cv.ontouchend=()=>{drag=false;};
+}
+
+/* ===== deconvolution (uses full ε(λ) over window) ===== */
+function buildEps(){
+  const lo=+$('lmin').value, hi=+$('lmax').value, b=+$('bcm').value, out={};
+  ['tz','ox'].forEach(r=>{ const std=usable(r); if(std.length<2){out[r]=null;return;}
+    const grid=[],eps=[]; for(let w=lo;w<=hi;w++){ grid.push(w);
+      const pts=std.filter(s=>At(s,w)<CEIL);
+      eps.push(pts.length<2?null:lin(pts.map(s=>s.conc),pts.map(s=>At(s,w))).sl/b); }
+    out[r]={grid,eps}; });
+  return out;
+}
+function washList(){ return S.filter(s=>s.role==='wash'&&s.use&&!s.short&&!s.dup); }
+function drawDeconv(){
+  const sel=$('wsel'), prev=sel.value, w=washList();
+  sel.innerHTML = w.length? w.map(s=>`<option value="${S.indexOf(s)}">${esc(s.name)}</option>`).join('') : '<option value="">— assign a Wash scan —</option>';
+  if(prev&&w.some(s=>String(S.indexOf(s))===prev)) sel.value=prev;
+  const E=buildEps();
+  const ready = E.tz&&E.ox&&w.length;
+  $('run').disabled=!ready;
+  $('dc-meta').textContent = ready?'ready':(!E.tz||!E.ox?'need TZ and Ox calibrations':'assign a wash scan');
+}
+function autoRun(){ if(!$('run').disabled && $('dc-out').classList.contains('hide')===false) runCLS(); }
+function runCLS(){
+  const E=buildEps(); const wi=$('wsel').value; if(!(E.tz&&E.ox)||wi===''){ return; }
+  const wash=S[+wi]; const b=+$('bcm').value, dil=+$('dil').value||1;
+  const useScat=$('scat').checked;
+  const rows=[];
+  E.tz.grid.forEach((w,i)=>{ const e1=E.tz.eps[i],e2=E.ox.eps[i]; if(e1===null||e2===null)return;
+    const a=At(wash,w); if(a>=CEIL)return; rows.push({w,e1:e1*b,e2:e2*b,a}); });
+  if(rows.length<5){ alert('Only '+rows.length+' usable wavelengths — widen the window or dilute the wash.'); return; }
+  /* design matrix: [eps_TZ, eps_Ox, 1] (+ scattering lambda^-4 when enabled) */
+  const nP = useScat?4:3;
+  const gvec = r => useScat ? [r.e1,r.e2,1,scatBasis(r.w)] : [r.e1,r.e2,1];
+  let M=Array.from({length:nP},()=>new Array(nP).fill(0)), v=new Array(nP).fill(0);
+  rows.forEach(r=>{ const G=gvec(r);
+    for(let a=0;a<nP;a++){ v[a]+=G[a]*r.a; for(let c=0;c<nP;c++) M[a][c]+=G[a]*G[c]; } });
+  const sol=solveN(M,v);
+  const cTZ=sol[0]*dil, cOx=sol[1]*dil, k0=sol[2], kS=useScat?sol[3]:0;
+  const fit=rows.map(r=>{const G=gvec(r); let s=0; for(let a=0;a<nP;a++) s+=G[a]*sol[a]; return s;});
+  const scatCurve=rows.map(r=>useScat?kS*scatBasis(r.w):0);
+  const res=rows.map((r,i)=>r.a-fit[i]);
+  LAST={rows,fit,res,cTZ,cOx,k0,kS,scatCurve,useScat,wash,E};
+  $('dc-ph').classList.add('hide'); $('dc-out').classList.remove('hide');
+  const o=opts('Wavelength (nm)','Absorbance (AU)'); o.scales.x.min=+$('lmin').value-2; o.scales.x.max=+$('lmax').value+2;
+  if(chWash)chWash.destroy();
+  const dsets=[
+    {label:'measured',data:rows.map(r=>({x:r.w,y:r.a})),borderColor:'#7c45cc',borderWidth:1.8,pointRadius:0},
+    {label:'fit',data:rows.map((r,i)=>({x:r.w,y:fit[i]})),borderColor:'#0e8a63',borderWidth:1.4,borderDash:[6,3],pointRadius:0},
+    {label:'residual',data:rows.map((r,i)=>({x:r.w,y:res[i]})),borderColor:'rgba(208,67,47,.85)',borderWidth:1,pointRadius:0}];
+  if(LAST.useScat) dsets.splice(2,0,{label:'scattering',data:rows.map((r,i)=>({x:r.w,y:LAST.scatCurve[i]})),
+    borderColor:'#b3790c',borderWidth:1.2,borderDash:[3,3],pointRadius:0});
+  chWash=new Chart($('c-wash'),{type:'line',data:{datasets:dsets},options:o});
+  const fmt=(c,r)=> c<0?{v:`<span style="color:var(--bad)">${c.toFixed(3)}</span> <small>mM</small>`,a:'negative → below LOD'}:{v:`${c.toFixed(3)} <small>mM</small>`,a:`${(c*MW[r]).toFixed(2)} mg/L`};
+  const t=fmt(cTZ,'tz'),ox=fmt(cOx,'ox');
+  $('v-tz').innerHTML=t.v;$('a-tz').textContent=t.a;$('v-ox').innerHTML=ox.v;$('a-ox').textContent=ox.a;
+  const rms=Math.sqrt(res.reduce((s,x)=>s+x*x,0)/res.length);
+  let runs=1; for(let i=1;i<res.length;i++) if(Math.sign(res[i])!==Math.sign(res[i-1]))runs++;
+  const structured=runs<res.length*0.35;
+  if(LAST.useScat){ const sMax=Math.max.apply(null,LAST.scatCurve), aMax=Math.max.apply(null,rows.map(r=>r.a));
+    const pct=aMax>0?100*sMax/aMax:0;
+    $('dc-meta').textContent = `scattering removed: ${sMax.toFixed(3)} AU (${pct.toFixed(0)}% of peak)`; }
+  else $('dc-meta').textContent='no scattering correction';
+  let m;
+  if(wash.over) m=['bad','!',`Wash peak A = ${wash.pA.toFixed(2)} exceeds the ceiling — result is unreliable. Dilute and re-scan.`];
+  else if(cTZ<0||cOx<0) m=['bad','!','Negative concentration — below LOD or an unmodelled absorber. Report as “not detected”.'];
+  else if(structured&&rms>0.01) m=['warn','≈',`Structured residual (RMS ${rms.toFixed(3)}) — a third absorber (methanol, Zn-complex) is likely present. Cross-check.`];
+  else if(rms<=0.008) m=['ok','✓',`Residual flat (RMS ${rms.toFixed(4)}). Two-component fit is good — values trustworthy.`];
+  else m=['warn','·',`Moderate residual (RMS ${rms.toFixed(3)}).`];
+  $('dc-msg').innerHTML=`<div class="msg ${m[0]}"><span class="i">${m[1]}</span><span>${m[2]}</span></div>`;
+}
+function exportCSV(){ if(!LAST)return; let o='CALF-20 CLS result\n';
+  o+=`wash,${LAST.wash.name}\nc_TZ_mM,${LAST.cTZ.toFixed(5)}\nc_Ox_mM,${LAST.cOx.toFixed(5)}\nk0,${LAST.k0.toFixed(5)}\n\nnm,A_meas,A_fit,residual\n`;
+  LAST.rows.forEach((r,i)=>{o+=`${r.w},${r.a.toFixed(5)},${LAST.fit[i].toFixed(5)},${LAST.res[i].toFixed(5)}\n`;});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([o],{type:'text/csv'})); a.download='calf20_result.csv'; a.click();
+}
+
+/* ===== orchestrate ===== */
+function drawAll(){ if(mode==='spectra')drawSpectra(); else if(mode==='calib')drawCalib(); else drawDeconv(); }
+function rebuild(){ annotate(); autoColor(); renderList(); drawAll(); if(mode!=='deconv')drawDeconv(); }
+rebuild();
+</script>
+</body>
+</html>

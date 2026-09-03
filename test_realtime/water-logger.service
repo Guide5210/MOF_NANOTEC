@@ -1,0 +1,41 @@
+[Unit]
+# ============================================================================
+#  water-logger.service  —  ESP32 Water Monitor logger (Ubuntu, run 24/7)
+# ============================================================================
+#  รัน logger.py เป็น background service:
+#    - เริ่มเองตอนบูต
+#    - restart อัตโนมัติถ้า crash หรือ USB หลุดยาว
+#    - ปิด CSV สะอาดเมื่อ systemctl stop (ผ่าน SIGTERM)
+#  ติดตั้งด้วย setup_ubuntu.sh (แนะนำ) หรือทำตาม README_ubuntu.md
+# ============================================================================
+Description=ESP32 Water Monitor serial logger
+# รอ USB/serial พร้อมก่อน (device อาจ enumerate ช้า)
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=simple
+
+# *** setup_ubuntu.sh จะแทนที่ 3 ค่านี้อัตโนมัติ ***
+# ถ้าตั้งเอง: User=ชื่อ login, WorkingDirectory=โฟลเดอร์ที่มี logger.py
+User=__USER__
+WorkingDirectory=__WORKDIR__
+
+# --service = headless (ไม่สร้าง/เปิด PDF), auto-detect port
+# ถ้าต้องการ fix port ให้เติม  --port /dev/water-monitor  (ดู udev ใน README)
+ExecStart=/usr/bin/python3 __WORKDIR__/logger.py --service --sample "__SAMPLE__"
+
+# restart เสมอถ้าออก (crash, USB หลุดยาว, ฯลฯ) รอ 10 วิ ก่อนเริ่มใหม่
+Restart=always
+RestartSec=10
+
+# ปิดด้วย SIGTERM (logger จับแล้วปิด CSV สะอาด) รอ 15 วิ ก่อนบังคับ kill
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# log ไปที่ journald (ดูด้วย journalctl -u water-logger -f)
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

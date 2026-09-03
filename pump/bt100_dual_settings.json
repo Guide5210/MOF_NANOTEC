@@ -1,0 +1,28 @@
+{
+  "pumps": [
+    {
+      "adapter": "SER:AV0M48DPA",
+      "com": "COM13",
+      "addr": 1,
+      "baud": "1200",
+      "rpm": 23.3,
+      "cw": false,
+      "ulrev": 0.0,
+      "poll": true,
+      "live": false
+    },
+    {
+      "adapter": "SER:AV0M25MOA",
+      "com": "COM14",
+      "addr": 1,
+      "baud": "1200",
+      "rpm": 27.6,
+      "cw": false,
+      "ulrev": 0.0,
+      "poll": true,
+      "live": false
+    }
+  ],
+  "interval": 1.0,
+  "log": false
+}

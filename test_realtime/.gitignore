@@ -1,0 +1,95 @@
+# ============================================================================
+#  .gitignore — legacy baseline ของ ESP32 Water Monitor (PC side)
+# ----------------------------------------------------------------------------
+#  จุดประสงค์ของ repo นี้คือ "หยุดเวลา" ของซอร์สที่ใช้งานจริง ณ วันที่สร้าง
+#  เพื่อให้ถอยกลับได้เสมอ  จึงเก็บเฉพาะ ซอร์ส / เอกสาร / สคริปต์ติดตั้ง
+#
+#  ⚠️ ห้ามเก็บข้อมูลห้องแล็บลง git เด็ดขาด
+#     ไฟล์ CSV/รายงานมีชื่อตัวอย่าง โน้ตของผู้ทดลอง และค่าที่วัดได้จริง
+#     ซึ่งเป็นข้อมูลงานวิจัย ไม่ใช่ซอร์สโค้ด และมีแต่จะโตจนทำให้ repo ใช้ไม่ได้
+# ============================================================================
+
+# ---- ข้อมูลดิบและผลการทดลอง (ห้ามเข้า git) ----
+water_data/
+reports/
+sensor_1/
+sensor_2/
+sensor_3/
+sensor_4/
+calibration_data/
+data/
+*.csv
+*.jsonl
+*.pdf
+*.xlsx
+*.xls
+
+# ---- บันทึกการทดลอง / สถานะ runtime ----
+sessions.json
+sessions_3ec.json
+sessions_ec.json
+rec_status.json
+calibration_log.json
+cal_status.json
+pc_state.json
+
+# ---- ค่าตั้งเฉพาะเครื่อง ----
+#  ค่าปัจจุบันถูกบันทึกไว้ใน BASELINE.md แล้ว สร้างใหม่ได้
+#  และโค้ดมีค่าเริ่มต้นที่ปลอดภัยอยู่แล้วถ้าไฟล์นี้หาย
+ec_ui_config.json
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# ---- ไฟล์สำรอง / ร่องรอยจากตัวแก้ไข ----
+#  git tag ทำหน้าที่นี้แทนแล้ว การเก็บสำเนามือไว้ด้วยจะทำให้มี
+#  "ของจริง" หลายชุดจนไม่รู้ว่าอันไหนคือของจริง
+*.bak
+*.save
+*.save.*
+*.orig
+*.rej
+*.tmp
+*~
+_backup_before_calreport/
+
+# ---- log ----
+*.log
+logs/
+
+# ---- ไฟล์ขยะจาก shell redirect ที่พลาด (ตรวจแล้วไม่ใช่ซอร์ส) ----
+#  "ervice - ..."  = ผลของ systemctl status ที่ถูก redirect ผิด (มี ANSI code)
+#  "ks_ 1 (...)"   = หน้าจอช่วยเหลือของ less
+ervice - *
+ks_ *
+
+# ---- ความลับ ----
+#  ⚠️ เคยใช้ *token* แบบกว้าง ๆ แล้วมันไปกิน docs/P4_TOKEN_SYNC.md ทิ้งเงียบ ๆ
+#     รูปแบบกว้างเกินไปในไฟล์นี้อันตราย เพราะมันตัดของออกโดยไม่มีใครเห็น
+#     จึงระบุให้แคบและตรงตัว
+.env
+.env.*
+*.env
+secrets.json
+secrets.*
+credentials.json
+credentials.*
+*.pem
+*.key
+*_token.json
+*_secret.json
+api_key*
+!docs/P4_TOKEN_SYNC.md
+
+# ---- OS / editor ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,24 @@
+[Unit]
+# ============================================================================
+#  water-line.service — LINE notifier ของ ESP32 Water Monitor
+#  (รายงานทุก 3 ชม. + แจ้ง EC คงที่ + แจ้งข้อมูลหยุดไหล)
+#  ติดตั้ง: แก้ __USER__ / __WORKDIR__ แล้ว
+#    sudo cp water-line.service /etc/systemd/system/
+#    sudo systemctl daemon-reload && sudo systemctl enable --now water-line
+# ============================================================================
+Description=ESP32 Water Monitor LINE notifier
+After=network-online.target water-logger.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__WORKDIR__
+ExecStart=/usr/bin/python3 __WORKDIR__/line_notifier.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

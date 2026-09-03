@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ergun Parameter Sensitivity Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom Slider Styling */
+        input[type=range] {
+            accent-color: #60a5fa;
+        }
+        .pellet-dot {
+            width: 12px; height: 12px;
+            background-color: #93c5fd;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body class="bg-[#121212] text-gray-200 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div class="bg-[#1e1e24] w-full max-w-4xl rounded-2xl shadow-2xl p-8 border border-gray-700">
+        
+        <div class="flex justify-between items-end border-b border-gray-700 pb-4 mb-6">
+            <h1 class="text-2xl font-bold text-white">วิเคราะห์ผลกระทบของขนาดแท่ง CALF-20 ต่อความดันตกคร่อม</h1>
+            <div class="flex space-x-6 text-right">
+                <div>
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Eq. Diameter (deq)</p>
+                    <p class="text-xl font-mono text-blue-400" id="val-deq">2.50 mm</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total ΔP</p>
+                    <p class="text-xl font-mono text-emerald-400" id="val-dp">0.0 Pa</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Velocity (v)</p>
+                    <p class="text-xl font-mono text-amber-400" id="val-v">0.00 m/s</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 mb-8">
+            <div class="bg-[#18181d] rounded-xl p-6 flex flex-col items-center justify-center border border-gray-700 relative">
+                <div class="absolute top-4 bg-gray-800 text-xs px-3 py-1 rounded-full border border-gray-600">DEQ: <span id="lbl-deq">2.50</span> MM</div>
+                
+                <div class="w-32 h-48 border-x-4 border-b-4 border-gray-500 rounded-b-md flex flex-wrap content-end justify-center p-2 mt-6 overflow-hidden bg-gray-800/50">
+                    <div id="particle-container" class="text-center leading-[0.5]"></div>
+                </div>
+            </div>
+
+            <div class="bg-[#18181d] rounded-xl p-6 border border-gray-700 flex flex-col justify-center">
+                <h2 class="text-sm font-bold mb-2">สัดส่วนความต้านทานการไหล (Pressure Drop Components)</h2>
+                <div class="h-48 w-full relative">
+                    <canvas id="pressureChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-800/30 p-6 rounded-xl border border-gray-700">
+            
+            <div class="flex items-center space-x-4">
+                <label class="w-48 text-sm">เส้นผ่านศูนย์กลาง (Dp) [mm]</label>
+                <input type="range" id="input-dp" min="1.0" max="5.0" step="0.1" value="2.0" class="flex-1">
+                <div class="bg-gray-800 border border-gray-600 w-16 text-center py-1 rounded text-sm font-mono" id="lbl-input-dp">2.0</div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <label class="w-48 text-sm">ความยาวแท่ง (Lp) [mm]</label>
+                <input type="range" id="input-lp" min="1.0" max="10.0" step="0.1" value="5.0" class="flex-1">
+                <div class="bg-gray-800 border border-gray-600 w-16 text-center py-1 rounded text-sm font-mono" id="lbl-input-lp">5.0</div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <label class="w-48 text-sm">อัตราการไหลจริง (Q) [ml/min]</label>
+                <input type="range" id="input-q" min="100" max="1000" step="10" value="250" class="flex-1">
+                <div class="bg-gray-800 border border-gray-600 w-16 text-center py-1 rounded text-sm font-mono" id="lbl-input-q">250</div>
+            </div>
+
+            <div class="flex items-center justify-end">
+                <button onclick="resetDefaults()" class="bg-gray-700 hover:bg-gray-600 text-white w-full py-2 rounded transition border border-gray-500 text-sm">
+                    คืนค่าเริ่มต้น (Reset)
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. Fixed Constants (Based on your system) ---
+        const L = 0.3; // m
+        const D_col = 0.016; // m
+        const A = Math.PI * Math.pow(D_col / 2, 2); // m^2
+        const epsilon = 0.40;
+        const mu = 1.78e-5; // Pa.s
+        const rho = 2.335; // kg/m^3
+
+        // --- 2. Chart Initialization ---
+        const ctx = document.getElementById('pressureChart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Laminar (ความหนืด)', 'Turbulent (ความเฉื่อย)'],
+                datasets: [{
+                    data: [50, 50],
+                    backgroundColor: ['#60a5fa', '#fb7185'], // Blue, Rose
+                    borderColor: '#18181d',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#e5e7eb', font: { size: 12 } } }
+                }
+            }
+        });
+
+        // --- 3. DOM Elements ---
+        const elDp = document.getElementById('input-dp');
+        const elLp = document.getElementById('input-lp');
+        const elQ = document.getElementById('input-q');
+
+        const valDeq = document.getElementById('val-deq');
+        const valDp = document.getElementById('val-dp');
+        const valV = document.getElementById('val-v');
+        const topLblDeq = document.getElementById('lbl-deq');
+
+        const lblInputDp = document.getElementById('lbl-input-dp');
+        const lblInputLp = document.getElementById('lbl-input-lp');
+        const lblInputQ = document.getElementById('lbl-input-q');
+        const particleContainer = document.getElementById('particle-container');
+
+        // --- 4. Main Calculation Function ---
+        function updateCalculations() {
+            // Get values
+            const dp_mm = parseFloat(elDp.value);
+            const lp_mm = parseFloat(elLp.value);
+            const q_ml_min = parseFloat(elQ.value);
+
+            // Update Labels
+            lblInputDp.textContent = dp_mm.toFixed(1);
+            lblInputLp.textContent = lp_mm.toFixed(1);
+            lblInputQ.textContent = q_ml_min;
+
+            // Math
+            const q_m3_s = (q_ml_min * 1e-6) / 60;
+            const v = q_m3_s / A;
+            
+            // Equivalent Diameter (Cylinder)
+            const dp_m = dp_mm / 1000;
+            const lp_m = lp_mm / 1000;
+            const deq_m = (3 * dp_m * lp_m) / ((2 * lp_m) + dp_m);
+            const deq_mm = deq_m * 1000;
+
+            // Ergun Equation
+            const term1 = 150 * ((mu * v * Math.pow(1 - epsilon, 2)) / (Math.pow(deq_m, 2) * Math.pow(epsilon, 3)));
+            const term2 = 1.75 * ((rho * Math.pow(v, 2) * (1 - epsilon)) / (deq_m * Math.pow(epsilon, 3)));
+            
+            const dp_L = term1 + term2;
+            const total_dp = dp_L * L;
+
+            const laminar_pct = (term1 / dp_L) * 100;
+            const turbulent_pct = (term2 / dp_L) * 100;
+
+            // Update UI Stats
+            valDeq.textContent = deq_mm.toFixed(2) + " mm";
+            topLblDeq.textContent = deq_mm.toFixed(2);
+            valDp.textContent = total_dp.toFixed(1) + " Pa";
+            valV.textContent = v.toFixed(3) + " m/s";
+
+            // Update Chart
+            chart.data.datasets[0].data = [laminar_pct, turbulent_pct];
+            chart.update();
+
+            // Render Particles Visual (Rough visual representation)
+            renderParticles(dp_mm);
+        }
+
+        function renderParticles(size_mm) {
+            particleContainer.innerHTML = '';
+            // Determine roughly how many particles fit (visual only)
+            const count = Math.max(10, Math.floor(40 / size_mm));
+            const scaledSize = Math.max(6, Math.min(20, size_mm * 4)); // scale for visual
+            
+            let html = '';
+            for(let i=0; i<count; i++) {
+                html += `<div class="pellet-dot" style="width:${scaledSize}px; height:${scaledSize}px;"></div>`;
+            }
+            particleContainer.innerHTML = html;
+        }
+
+        function resetDefaults() {
+            elDp.value = 2.0;
+            elLp.value = 5.0;
+            elQ.value = 250;
+            updateCalculations();
+        }
+
+        // --- 5. Event Listeners ---
+        elDp.addEventListener('input', updateCalculations);
+        elLp.addEventListener('input', updateCalculations);
+        elQ.addEventListener('input', updateCalculations);
+
+        // Initial Run
+        updateCalculations();
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# ---- ข้อมูลที่แอปนี้สร้างเอง (ไม่เข้า git) ----
+data/
+*.jsonl
+*.log
+
+# ---- ค่าตั้งเฉพาะเครื่อง ----
+config/app_config.json
+
+# ---- ห้ามมีข้อมูลห้องแล็บใน repo นี้เด็ดขาด ----
+# แอปนี้เป็น read-only ต่อข้อมูลของ legacy อยู่แล้ว แต่กันไว้อีกชั้น
+*.csv
+*.pdf
+*.xlsx
+*.xls
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# ---- editor / OS ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

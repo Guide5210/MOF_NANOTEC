@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PC Dashboard — Lab Theme Mockup</title>
+<style>
+:root{
+  --bg:#F4F7F8; --surface:#FFFFFF; --surface-alt:#EDF2F4; --border:#D9E2E6;
+  --text:#1D2A31; --dim:#66757D;
+  --accent:#007C83; --accent-soft:#DCEFED;
+  --ok:#178F7A; --warn:#B77700; --warn-soft:#F7ECD3;
+  --error:#B3263E; --error-soft:#F8E1E6;
+  --idle:#95A2A8; --grid:#E3EAED;
+  --s1:#007C83; --s2:#3E6E9C; --s3:#8A6F3E; --s4:#7A5A87;
+  --f-value:34px; --f-title:19px; --f-body:14px; --f-small:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#DDE5E8;color:var(--text);
+ font-family:"Segoe UI","Noto Sans Thai",Inter,system-ui,sans-serif;font-size:var(--f-body);line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+h2{font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+ font-weight:600;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h2:first-child{margin-top:0}
+.note{color:var(--dim);font-size:13px;margin:-6px 0 16px}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- app shell ---------- */
+.app{background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);
+ padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hdr .brand{font-size:var(--f-title);font-weight:600;letter-spacing:.06em}
+.hdr .sum{color:var(--dim);font-size:13px;letter-spacing:.04em}
+.hdr .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.body{padding:18px 20px 20px}
+
+/* ---------- cards ---------- */
+.cards{display:grid;gap:16px;margin-bottom:18px}
+.g1{grid-template-columns:1fr}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.card.disabled{background:var(--surface-alt)}
+.card .name{font-size:var(--f-small);letter-spacing:.1em;color:var(--dim);font-weight:600}
+.card .st{display:flex;align-items:center;gap:8px;margin:6px 0 10px;
+ font-size:15px;font-weight:600;letter-spacing:.06em}
+.card .val{font-size:var(--f-value);font-weight:600;line-height:1.05;font-variant-numeric:tabular-nums}
+.card .unit{font-size:13px;color:var(--dim)}
+.card .temp{font-size:13px;color:var(--dim);margin-top:2px}
+.card .foot{font-size:var(--f-small);color:var(--dim);margin-top:12px;
+ border-top:1px solid var(--border);padding-top:8px}
+.card.wide{display:grid;grid-template-columns:1fr auto;align-items:end}
+.card.wide .val{font-size:56px}
+.dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+
+/* ---------- controls ---------- */
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 15px;font:inherit;font-size:13px;
+ color:var(--text);cursor:pointer;border-right:1px solid var(--border)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff;font-weight:600}
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);
+ padding:7px 14px;border-radius:8px;font:inherit;font-size:13px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.danger{background:var(--surface);border-color:var(--error);color:var(--error)}
+.lbl{font-size:13px;color:var(--dim)}
+.spacer{margin-left:auto}
+.recrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;
+ background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin-bottom:16px}
+.rec{display:inline-flex;align-items:center;gap:6px}
+
+/* ---------- banners ---------- */
+.banner{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;
+ border:1px solid;border-radius:8px;margin-bottom:14px}
+.banner.warn{background:var(--warn-soft);border-color:#E3C98F;color:#7A5200}
+.banner.info{background:var(--accent-soft);border-color:#A9D6D3;color:#005F65}
+.banner .spacer{margin-left:auto}
+
+/* ---------- chart ---------- */
+.chart{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px 8px}
+.chart .cap{font-size:var(--f-small);letter-spacing:.08em;color:var(--dim);font-weight:600;margin-bottom:6px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.toolbar{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.toolbar span{font-size:11px;color:var(--idle);border:1px solid var(--border);
+ border-radius:6px;padding:3px 8px}
+
+/* ---------- event log ---------- */
+.events{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-top:16px}
+.events .cap{font-size:var(--f-small);letter-spacing:.08em;color:var(--dim);font-weight:600;
+ padding:12px 16px 8px}
+.ev{display:grid;grid-template-columns:76px 12px 1fr;gap:10px;align-items:center;
+ padding:7px 16px;border-top:1px solid var(--border);font-size:13px}
+.ev time{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12px}
+.ev .k{font-weight:600;letter-spacing:.04em}
+
+/* ---------- reference tables ---------- */
+table{width:100%;border-collapse:collapse;background:var(--surface);
+ border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+th{background:var(--surface-alt);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+tr:last-child td{border-bottom:0}
+.sw{display:inline-block;width:26px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.12);
+ vertical-align:middle;margin-right:8px}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--surface-alt);
+ padding:1px 5px;border-radius:4px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);
+ border:1px solid var(--border);border-radius:8px;padding:7px 13px;font-size:13px;font-weight:600;letter-spacing:.05em}
+.warnbox{background:var(--error-soft);border:1px solid #E8AFBC;border-radius:8px;padding:12px 16px;font-size:13px;color:#7C1A2C}
+@media(max-width:820px){.g3,.g4,.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h2>1 · Dashboard ที่เสนอ — 3 sensors (สถานะจริงตอนนี้: #1 ปิดไว้)</h2>
+<p class="note">คำสถานะ สี และรูปแบบข้อความ freshness ทั้งหมดคัดลอกความหมายมาจาก
+<code>sensor_state_colour()</code> และ <code>format_age()</code> ของ P4 โดยตรง</p>
+
+<div class="app">
+  <div class="hdr">
+    <span class="dot" style="background:var(--ok)"></span>
+    <span class="brand">EC MEASUREMENT STATION</span>
+    <span class="sum">3 SENSORS • 2 STEADY • 1 DISABLED</span>
+    <div class="right">
+      <span class="lbl">Sample <b style="color:var(--text)">CALF-20 B3</b></span>
+      <span class="lbl mono">Updated now</span>
+      <button class="btn">Settings</button>
+    </div>
+  </div>
+  <div class="body">
+
+    <div class="cards g3">
+      <div class="card disabled">
+        <div class="name">SENSOR 01</div>
+        <div class="st" style="color:var(--idle)"><span class="dot" style="background:var(--idle)"></span>DISABLED</div>
+        <div class="val" style="color:var(--idle)">— — —</div>
+        <div class="unit">uS/cm</div>
+        <div class="temp">&nbsp;</div>
+        <div class="foot">Excluded from polling by configuration</div>
+      </div>
+      <div class="card">
+        <div class="name">SENSOR 02</div>
+        <div class="st" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STEADY</div>
+        <div class="val">84.6</div>
+        <div class="unit">uS/cm</div>
+        <div class="temp">20.4 °C</div>
+        <div class="foot">Updated now</div>
+      </div>
+      <div class="card">
+        <div class="name">SENSOR 03</div>
+        <div class="st" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STEADY</div>
+        <div class="val">85.4</div>
+        <div class="unit">uS/cm</div>
+        <div class="temp">20.5 °C</div>
+        <div class="foot">Updated 2s ago</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="lbl">Range</span>
+      <div class="seg">
+        <button aria-pressed="true">10 min</button><button>1 hr</button>
+        <button>6 hr</button><button>24 hr</button><button>All</button>
+      </div>
+      <div class="seg" style="margin-left:8px">
+        <button aria-pressed="true">Split</button><button>Overlay</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn">Export CSV</button>
+      <button class="btn">Export Excel</button>
+      <button class="btn primary">Export PDF</button>
+    </div>
+
+    <div class="recrow">
+      <span class="lbl">Recording</span>
+      <span class="rec" style="color:var(--idle)"><span class="dot" style="background:var(--idle)"></span>#1 DISABLED</span>
+      <span class="rec" style="color:var(--error)"><span class="dot" style="background:var(--error)"></span>#2 REC</span>
+      <span class="rec" style="color:var(--error)"><span class="dot" style="background:var(--error)"></span>#3 REC</span>
+      <span class="lbl" style="margin-left:8px">Session</span>
+      <select class="btn" style="min-width:230px"><option>All data — time range</option></select>
+    </div>
+
+    <div class="chart">
+      <div class="cap">EC vs TIME — SPLIT</div>
+      <svg viewBox="0 0 900 300" width="100%" height="270" role="img" aria-label="EC trend chart">
+        <rect width="900" height="300" fill="#FFFFFF"/>
+        <!-- panel 2 -->
+        <g transform="translate(56,10)">
+          <rect width="820" height="128" fill="#FFFFFF" stroke="#D9E2E6" stroke-width="1"/>
+          <g stroke="#E3EAED" stroke-width="1">
+            <line x1="0" y1="32" x2="820" y2="32"/><line x1="0" y1="64" x2="820" y2="64"/>
+            <line x1="0" y1="96" x2="820" y2="96"/>
+            <line x1="205" y1="0" x2="205" y2="128"/><line x1="410" y1="0" x2="410" y2="128"/>
+            <line x1="615" y1="0" x2="615" y2="128"/>
+          </g>
+          <polyline fill="none" stroke="#3E6E9C" stroke-width="1.8"
+            points="0,70 60,69 120,71 180,68 240,70 300,66 360,69 420,64 480,67 540,63 600,66 660,62 720,65 780,61 820,63"/>
+          <text x="-8" y="10" text-anchor="end" font-size="10" fill="#66757D">88</text>
+          <text x="-8" y="68" text-anchor="end" font-size="10" fill="#66757D">85</text>
+          <text x="-8" y="124" text-anchor="end" font-size="10" fill="#66757D">82</text>
+          <text x="6" y="16" font-size="10" fill="#3E6E9C" font-weight="600">SENSOR 02</text>
+        </g>
+        <!-- panel 3 -->
+        <g transform="translate(56,152)">
+          <rect width="820" height="128" fill="#FFFFFF" stroke="#D9E2E6" stroke-width="1"/>
+          <g stroke="#E3EAED" stroke-width="1">
+            <line x1="0" y1="32" x2="820" y2="32"/><line x1="0" y1="64" x2="820" y2="64"/>
+            <line x1="0" y1="96" x2="820" y2="96"/>
+            <line x1="205" y1="0" x2="205" y2="128"/><line x1="410" y1="0" x2="410" y2="128"/>
+            <line x1="615" y1="0" x2="615" y2="128"/>
+          </g>
+          <polyline fill="none" stroke="#8A6F3E" stroke-width="1.8"
+            points="0,58 60,60 120,57 180,59 240,55 300,58 360,54 420,57 480,53 540,56 600,52 660,55 720,51 780,54 820,52"/>
+          <text x="-8" y="10" text-anchor="end" font-size="10" fill="#66757D">88</text>
+          <text x="-8" y="68" text-anchor="end" font-size="10" fill="#66757D">85</text>
+          <text x="-8" y="124" text-anchor="end" font-size="10" fill="#66757D">82</text>
+          <text x="6" y="16" font-size="10" fill="#8A6F3E" font-weight="600">SENSOR 03</text>
+          <g font-size="10" fill="#66757D" text-anchor="middle">
+            <text x="0" y="144">00:10</text><text x="205" y="144">00:12</text>
+            <text x="410" y="144">00:14</text><text x="615" y="144">00:16</text><text x="820" y="144">00:18</text>
+          </g>
+        </g>
+      </svg>
+      <div class="legend">
+        <span><i style="background:var(--s1)"></i>Sensor 1</span>
+        <span><i style="background:var(--s2)"></i>Sensor 2</span>
+        <span><i style="background:var(--s3)"></i>Sensor 3</span>
+        <span><i style="background:var(--s4)"></i>Sensor 4</span>
+        <span style="margin-left:auto">1,842 points (downsampled)</span>
+      </div>
+      <div class="toolbar"><span>⌂ home</span><span>← →</span><span>✥ pan</span><span>⬚ zoom</span><span>⚙ config</span><span>⤓ save</span></div>
+    </div>
+
+    <div class="events">
+      <div class="cap">EVENT LOG</div>
+      <div class="ev"><time>00:20:04</time><span class="dot" style="background:var(--ok)"></span><span><span class="k">SAVED</span> · Sensor 02 · 84.6 uS/cm · stable 15s</span></div>
+      <div class="ev"><time>00:19:49</time><span class="dot" style="background:var(--ok)"></span><span><span class="k">STABLE</span> · Sensor 02 · tolerance 2.0 uS/cm</span></div>
+      <div class="ev"><time>00:19:12</time><span class="dot" style="background:var(--accent)"></span><span><span class="k">RUN STARTED</span> · Sensor 02</span></div>
+      <div class="ev"><time>00:11:03</time><span class="dot" style="background:var(--warn)"></span><span><span class="k">CALIBRATION</span> · Sensor 03 @ 84 uS/cm · from touchscreen</span></div>
+      <div class="ev"><time>00:00:14</time><span class="dot" style="background:var(--accent)"></span><span><span class="k">SESSION START</span> · Sensor 02, 03 · sample CALF-20 B3</span></div>
+    </div>
+
+  </div>
+</div>
+
+<h2>2 · แถบสถานะพิเศษ (แสดงเมื่อเข้าเงื่อนไขเท่านั้น)</h2>
+<div class="banner warn"><span class="dot" style="background:var(--warn)"></span>
+  <b>HISTORY VIEW — LIVE FOLLOW PAUSED</b>
+  <span style="color:#8A6300">กำลังดูข้อมูลย้อนหลัง ค่าบนกราฟไม่ใช่ค่าปัจจุบัน</span>
+  <span class="spacer"></span><button class="btn">Return to live</button></div>
+<div class="banner info"><span class="dot" style="background:var(--accent)"></span>
+  <b>CALIBRATING SENSOR 02 @ 84 uS/cm</b>
+  <span style="color:#00666C">waiting for a stable reading · started from the touchscreen</span>
+  <span class="spacer"></span><span class="lbl mono">00:38</span></div>
+<div class="banner" style="background:var(--error-soft);border-color:#E8AFBC;color:#7C1A2C">
+  <span class="dot" style="background:var(--error)"></span>
+  <b>SENSOR BOARD OFFLINE</b>
+  <span>ไม่ได้รับข้อมูลจาก COM5 มา 24 วินาที — logger กำลังลองต่อใหม่</span></div>
+
+<h2>3 · ผังตาม mask 1 / 2 / 4 sensors</h2>
+
+<p class="note"><b>1 sensor</b> — การ์ดเดียวเต็มความกว้าง ค่า 56 px</p>
+<div class="app"><div class="body" style="padding:16px 20px">
+  <div class="cards g1"><div class="card wide">
+    <div><div class="name">SENSOR 02</div>
+      <div class="st" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STEADY</div>
+      <div class="foot" style="border:0;padding:0;margin-top:10px">Updated now · 20.4 °C</div></div>
+    <div style="text-align:right"><div class="val">84.6</div><div class="unit">uS/cm</div></div>
+  </div></div>
+</div></div>
+
+<p class="note" style="margin-top:18px"><b>2 sensors</b> — 2 คอลัมน์</p>
+<div class="app"><div class="body" style="padding:16px 20px">
+  <div class="cards g2">
+    <div class="card"><div class="name">SENSOR 02</div>
+      <div class="st" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STEADY</div>
+      <div class="val">84.6</div><div class="unit">uS/cm</div><div class="temp">20.4 °C</div>
+      <div class="foot">Updated now</div></div>
+    <div class="card"><div class="name">SENSOR 03</div>
+      <div class="st" style="color:var(--accent)"><span class="dot" style="background:var(--accent)"></span>CHANGING</div>
+      <div class="val">85.4</div><div class="unit">uS/cm</div><div class="temp">20.5 °C</div>
+      <div class="foot">Updated 2s ago</div></div>
+  </div>
+</div></div>
+
+<p class="note" style="margin-top:18px"><b>4 sensors</b> — 2×2 · ตัวอย่างนี้แสดงครบทุกสถานะที่ต่างกัน</p>
+<div class="app"><div class="body" style="padding:16px 20px">
+  <div class="cards g4">
+    <div class="card"><div class="name">SENSOR 01</div>
+      <div class="st" style="color:var(--error)"><span class="dot" style="background:var(--error)"></span>SENSOR FAULT</div>
+      <div class="val" style="color:var(--idle)">— — —</div><div class="unit">uS/cm</div><div class="temp">&nbsp;</div>
+      <div class="foot">No reply for 8 cycles — check the probe wiring</div></div>
+    <div class="card"><div class="name">SENSOR 02</div>
+      <div class="st" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STEADY</div>
+      <div class="val">84.6</div><div class="unit">uS/cm</div><div class="temp">20.4 °C</div>
+      <div class="foot">Updated now</div></div>
+    <div class="card"><div class="name">SENSOR 03</div>
+      <div class="st" style="color:var(--warn)"><span class="dot" style="background:var(--warn)"></span>STALE</div>
+      <div class="val" style="color:var(--idle)">85.4</div><div class="unit">uS/cm</div><div class="temp">20.5 °C</div>
+      <div class="foot">Updated 47s ago</div></div>
+    <div class="card disabled"><div class="name">SENSOR 04</div>
+      <div class="st" style="color:var(--idle)"><span class="dot" style="background:var(--idle)"></span>DISABLED</div>
+      <div class="val" style="color:var(--idle)">— — —</div><div class="unit">uS/cm</div><div class="temp">&nbsp;</div>
+      <div class="foot">Excluded from polling by configuration</div></div>
+  </div>
+</div></div>
+
+<h2>4 · คำสถานะทั้งหมด · สี · ความหมาย</h2>
+<p class="note">ชุดนี้ตรงกับ <code>monitor_state_text()</code> + <code>measure_state_label()</code> ของ P4 ทุกคำ</p>
+<div class="chips">
+  <span class="chip" style="color:var(--accent)"><span class="dot" style="background:var(--accent)"></span>LIVE</span>
+  <span class="chip" style="color:var(--accent)"><span class="dot" style="background:var(--accent)"></span>CHANGING</span>
+  <span class="chip" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STEADY</span>
+  <span class="chip" style="color:var(--warn)"><span class="dot" style="background:var(--warn)"></span>OBSERVING</span>
+  <span class="chip" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>STABLE</span>
+  <span class="chip" style="color:var(--ok)"><span class="dot" style="background:var(--ok)"></span>SAVED</span>
+  <span class="chip" style="color:var(--warn)"><span class="dot" style="background:var(--warn)"></span>STALE</span>
+  <span class="chip" style="color:var(--error)"><span class="dot" style="background:var(--error)"></span>NO RESPONSE</span>
+  <span class="chip" style="color:var(--error)"><span class="dot" style="background:var(--error)"></span>SENSOR FAULT</span>
+  <span class="chip" style="color:var(--idle)"><span class="dot" style="background:var(--idle)"></span>DISABLED</span>
+  <span class="chip" style="color:var(--idle)"><span class="dot" style="background:var(--idle)"></span>OFFLINE</span>
+</div>
+
+<h2>5 · Design tokens</h2>
+<table>
+<tr><th>Token</th><th>ค่า</th><th>P4 (<code>ui_tokens.h</code>)</th><th>ใช้ทำอะไร</th></tr>
+<tr><td><code>BG</code></td><td><span class="sw" style="background:#F4F7F8"></span>#F4F7F8</td><td><code>UI_BG</code> ตรงกัน ✓</td><td>พื้นหลังหน้าต่าง</td></tr>
+<tr><td><code>SURFACE</code></td><td><span class="sw" style="background:#FFFFFF"></span>#FFFFFF</td><td><code>UI_SURFACE</code> ✓</td><td>พื้น card / chart</td></tr>
+<tr><td><code>SURFACE_ALT</code></td><td><span class="sw" style="background:#EDF2F4"></span>#EDF2F4</td><td><code>UI_SURFACE_ALT</code> ✓</td><td>card ที่ DISABLED · หัวตาราง</td></tr>
+<tr><td><code>BORDER</code></td><td><span class="sw" style="background:#D9E2E6"></span>#D9E2E6</td><td><code>UI_BORDER</code> ✓</td><td>เส้นขอบ 1 px</td></tr>
+<tr><td><code>TEXT</code></td><td><span class="sw" style="background:#1D2A31"></span>#1D2A31</td><td><code>UI_TEXT</code> ✓</td><td>ข้อความหลัก · ค่า EC</td></tr>
+<tr><td><code>TEXT_DIM</code></td><td><span class="sw" style="background:#66757D"></span>#66757D</td><td><code>UI_TEXT_DIM</code> ✓</td><td>หน่วย · เวลา · แกนกราฟ</td></tr>
+<tr><td><code>ACCENT</code></td><td><span class="sw" style="background:#007C83"></span>#007C83</td><td><code>UI_ACCENT</code> ✓</td><td>ปุ่มหลัก · LIVE · CHANGING</td></tr>
+<tr><td><code>OK</code></td><td><span class="sw" style="background:#178F7A"></span>#178F7A</td><td><code>UI_OK</code> = <b>#008B7A</b> ✗</td><td>STEADY · STABLE · SAVED</td></tr>
+<tr><td><code>WARN</code></td><td><span class="sw" style="background:#B77700"></span>#B77700</td><td><code>UI_WARN</code> ✓</td><td>STALE · OBSERVING · history view</td></tr>
+<tr><td><code>ERROR</code></td><td><span class="sw" style="background:#B3263E"></span>#B3263E</td><td><code>UI_ERROR</code> ✓</td><td>NO RESPONSE · SENSOR FAULT</td></tr>
+<tr><td><code>IDLE</code></td><td><span class="sw" style="background:#95A2A8"></span>#95A2A8</td><td><code>UI_IDLE</code> = <b>#9AA7AE</b> ✗</td><td>DISABLED · OFFLINE · ค่าที่หมดอายุ</td></tr>
+<tr><td><code>ACCENT_SOFT</code></td><td><span class="sw" style="background:#DCEFED"></span>#DCEFED</td><td>ไม่มีบน P4</td><td>พื้นแถบ calibration</td></tr>
+<tr><td><code>WARN_SOFT</code></td><td><span class="sw" style="background:#F7ECD3"></span>#F7ECD3</td><td>ไม่มีบน P4</td><td>พื้นแถบ history view</td></tr>
+<tr><td><code>ERROR_SOFT</code></td><td><span class="sw" style="background:#F8E1E6"></span>#F8E1E6</td><td>ไม่มีบน P4</td><td>พื้นแถบ board offline</td></tr>
+<tr><td><code>GRID</code></td><td><span class="sw" style="background:#E3EAED"></span>#E3EAED</td><td>ไม่มีบน P4</td><td>เส้นตารางกราฟ</td></tr>
+</table>
+
+<h2>6 · สีเส้นกราฟ — จุดที่ต้องตัดสินใจ</h2>
+<div class="warnbox"><b>สีเส้นของ sensor 2 และ 3 สลับกันระหว่างสองเครื่อง</b><br>
+ถ้าไม่แก้ เส้นของ sensor 2 จะเป็น<b>น้ำเงิน</b>บนจอ PC แต่เป็น<b>น้ำตาล</b>บนจอ P4 —
+ซึ่งทำลายจุดประสงค์ของการใช้ธีมเดียวกันมากกว่าเรื่องอื่นทั้งหมดรวมกัน</div>
+<table style="margin-top:12px">
+<tr><th>Sensor</th><th>ที่คุณกำหนดให้ PC</th><th>P4 <code>ui_tokens.h</code> ตอนนี้</th><th>ตรงกันไหม</th></tr>
+<tr><td>1</td><td><span class="sw" style="background:#007C83"></span>#007C83 teal</td><td><span class="sw" style="background:#007C83"></span><code>UI_SERIES_1</code> #007C83</td><td>✓ ตรง</td></tr>
+<tr><td>2</td><td><span class="sw" style="background:#3E6E9C"></span>#3E6E9C น้ำเงิน</td><td><span class="sw" style="background:#8A5A00"></span><code>UI_SERIES_2</code> #8A5A00 น้ำตาล</td><td>✗ <b>สลับกัน</b></td></tr>
+<tr><td>3</td><td><span class="sw" style="background:#8A6F3E"></span>#8A6F3E น้ำตาล</td><td><span class="sw" style="background:#4A5FA5"></span><code>UI_SERIES_3</code> #4A5FA5 น้ำเงิน</td><td>✗ <b>สลับกัน</b></td></tr>
+<tr><td>4</td><td><span class="sw" style="background:#7A5A87"></span>#7A5A87 ม่วง</td><td>ยังไม่มี</td><td>— ต้องเพิ่มฝั่ง P4</td></tr>
+</table>
+
+<h2>7 · ก่อน / หลัง</h2>
+<table>
+<tr><th></th><th>ตอนนี้</th><th>ที่เสนอ</th></tr>
+<tr><td>พื้นหลัง</td><td><span class="sw" style="background:#0f1720"></span>#0f1720 น้ำเงินเข้ม</td><td><span class="sw" style="background:#F4F7F8"></span>#F4F7F8</td></tr>
+<tr><td>สีเส้นกราฟ</td><td>#1565C0 · #2E7D32 · #EF6C00 (Material)</td><td>ชุด series ของ P4</td></tr>
+<tr><td>สถานะ sensor</td><td><code>● LIVE</code> / <code>● ERROR</code> — 2 สถานะ</td><td>11 สถานะตรงกับ P4</td></tr>
+<tr><td>sensor ที่ปิดไว้</td><td>ขึ้น <b style="color:var(--error)">ERROR</b> สีแดง</td><td>ขึ้น <b style="color:var(--idle)">DISABLED</b> สีเทา</td></tr>
+<tr><td>ชื่อการ์ด</td><td>EC ภาชนะ #1</td><td>SENSOR 01 (ตรงกับจอ)</td></tr>
+<tr><td>ปุ่มช่วงเวลา</td><td>ปุ่มเดี่ยว พื้นเข้ม</td><td>segmented control</td></tr>
+<tr><td>freshness</td><td>live • 00:20:05 (4s ago)</td><td>Updated 4s ago (ถ้อยคำเดียวกับ P4)</td></tr>
+<tr><td>event log</td><td>ไม่มี</td><td>แผงเหตุการณ์ 5-20 บรรทัดล่าสุด</td></tr>
+<tr><td>จำนวน sensor</td><td>ตายตัว 3</td><td>1-4 ตาม mask</td></tr>
+<tr><td>สีในโค้ด</td><td>ฝัง 11 จุด</td><td><code>lab_theme.py</code> ที่เดียว</td></tr>
+</table>
+
+<p class="note" style="margin-top:34px">Mockup นี้เป็นภาพเป้าหมายเท่านั้น — ยังไม่มีการแก้โค้ดใด ๆ</p>
+
+</div>
+</body>
+</html>
